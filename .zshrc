@@ -3,8 +3,8 @@ export PATH="$HOME/.local/bin:$HOME/.bun/bin:$PATH"
 export TERM="xterm-256color"
 
 # --- Oh My Posh (Takuya Theme) ---
+# We use the version tracked in your yadm dotfiles
 THEME_FILE="$HOME/.takuya.omp.json"
-[[ ! -f "$THEME_FILE" ]] && curl -sL "https://raw.githubusercontent.com/craftzdog/dotfiles-public/master/.config/powershell/takuya.omp.json" -o "$THEME_FILE"
 
 if command -v oh-my-posh >/dev/null; then
     eval "$(oh-my-posh init zsh --config "$THEME_FILE")"
@@ -43,6 +43,7 @@ bindkey "^[[B" down-line-or-beginning-search
 [[ -f /usr/share/fzf/shell/key-bindings.zsh ]] && source /usr/share/fzf/shell/key-bindings.zsh
 
 # --- Navigation & Aliases ---
+# Initializing zoxide for the 'z' command
 eval "$(zoxide init zsh)"
 
 alias y="yadm"
@@ -54,5 +55,3 @@ alias edpro="code ~/.zshrc"
 alias open="kioclient exec"
 alias dolphin="dolphin . & disown"
 
-# --- Bun ---
-[[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
