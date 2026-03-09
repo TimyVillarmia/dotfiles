@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -e
+
+echo "▶ bootstrap starting..."
+
+# Install essential tools 
+sudo dnf install -y zsh curl fzf zoxide btop
+
+# Install Oh My Posh 
+if ! command -v oh-my-posh &> /dev/null; then
+    curl -s https://ohmyposh.dev/install.sh | bash -s
+fi
+
+# Install Zinit (Zsh plugin manager)
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+if [ ! -d "$ZINIT_HOME" ]; then
+    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+fi
+
+# Install Nerd Font (JetBrainsMono) for prompt
+FONT_DIR="$HOME/.local/share/fonts"
+mkdir -p "$FONT_DIR"
+if ! fc-list | grep -qi "JetBrainsMono Nerd Font"; then
+    curl -fLo "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" \
+    https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Regular/JetBrainsMonoNerdFont-Regular.ttf
+    fc-cache -fv
+fi
+
+# Set Zsh as default shell
+if [[ "$SHELL" != *"zsh"* ]]; then
+    chsh -s $(which zsh)
+fi
+
+echo "✔ bootstrap complete"
