@@ -22,10 +22,26 @@ sudo apt install -y \
   unzip \
   ca-certificates
 
-# Install Oh My Posh
-if ! command -v oh-my-posh >/dev/null 2>&1; then
-  echo "→ Installing Oh My Posh"
-  curl -s https://ohmyposh.dev/install.sh | bash -s
+
+# ------------------------------
+# Install Nerd Font (JetBrainsMono)
+# ------------------------------
+FONT_DIR="$HOME/.local/share/fonts"
+mkdir -p "$FONT_DIR"
+
+if ! fc-list | grep -qi "JetBrainsMono Nerd Font"; then
+    echo "→ Installing JetBrainsMono Nerd Font"
+
+    TMP_DIR=$(mktemp -d)
+
+    curl -L -o "$TMP_DIR/jetbrainsmono.zip" \
+        https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+
+    unzip -o "$TMP_DIR/jetbrainsmono.zip" -d "$FONT_DIR"
+
+    rm -rf "$TMP_DIR"
+
+    fc-cache -fv
 fi
 
 # Ensure local bin exists
