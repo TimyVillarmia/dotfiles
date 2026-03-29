@@ -48,17 +48,22 @@ bindkey "^[[B" down-line-or-beginning-search
 
 [[ -f /usr/share/fzf/shell/key-bindings.zsh ]] && source /usr/share/fzf/shell/key-bindings.zsh
 
-# ------------------------------
-# Navigation & Aliases
-# ------------------------------
+
+# --- Navigation & Aliases ---
 eval "$(zoxide init zsh)"
-
 alias c="clear"
-alias update="sudo dnf upgrade"
 alias reload="source ~/.zshrc"
-alias edpro="code ~/.zshrc"
 alias v="code"
-alias open="kioclient exec"
-alias dolphin="dolphin . & disown"
 
-
+# Detect Environment
+if [[ -f /etc/fedora-release ]]; then
+    # FEDORA ONLY
+    alias update="sudo dnf upgrade"
+    alias open="kioclient exec"
+    alias dolphin="dolphin . & disown"
+elif [[ -d /mnt/c/Windows ]]; then
+    # WSL ONLY
+    alias update="sudo apt update && sudo apt upgrade"
+    alias open="explorer.exe"
+    alias dolphin="explorer.exe ."
+fi
