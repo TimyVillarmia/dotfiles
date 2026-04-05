@@ -5,7 +5,7 @@ export TERM="xterm-256color"
 # ------------------------------
 # Oh My Posh (Takuya Theme)
 # ------------------------------
-THEME_FILE="$HOME/.takuya.omp.json"
+THEME_FILE="$HOME/.theme.omp.json"
 if command -v oh-my-posh >/dev/null; then
     eval "$(oh-my-posh init zsh --config "$THEME_FILE")"
 fi
