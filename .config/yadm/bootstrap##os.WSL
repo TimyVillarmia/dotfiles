@@ -3,7 +3,7 @@ set -e
 echo "▶ Starting WSL (Ubuntu) bootstrap..."
 
 # Install Ubuntu tools
-sudo apt update && sudo apt install -y zsh curl fzf zoxide btop
+sudo apt update && sudo apt install -y git zsh curl fzf zoxide btop
 
 # Install Oh My Posh
 if ! command -v oh-my-posh &> /dev/null; then
@@ -12,7 +12,9 @@ fi
 
 # Zinit
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-[ ! -d "$ZINIT_HOME" ] && git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+if [ ! -d "$ZINIT_HOME" ]; then
+    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+fi
 
 # Set Shell
 [[ "$SHELL" != *"zsh"* ]] && sudo chsh -s $(which zsh) $(whoami)
