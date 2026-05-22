@@ -3,7 +3,7 @@ set -e
 echo "▶ Starting WSL (Ubuntu) bootstrap..."
 
 # Install Ubuntu tools
-sudo apt update && sudo apt install -y git zsh curl fzf zoxide btop
+sudo apt update && sudo apt install -y git zsh curl fzf zoxide btop unzip
 
 # Install Oh My Posh
 if ! command -v oh-my-posh &> /dev/null; then
