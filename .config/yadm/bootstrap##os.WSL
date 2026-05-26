@@ -1,22 +1,36 @@
 #!/usr/bin/env bash
-set -e
-echo "▶ Starting WSL (Ubuntu) bootstrap..."
+set -euo pipefail
 
-# Install Ubuntu tools
-sudo apt update && sudo apt install -y git zsh curl fzf zoxide btop unzip
+echo "▶ Bootstrapping WSL dev environment"
 
-# Install Oh My Posh
+sudo apt update
+
+sudo apt install -y \
+ git \
+ zsh \
+ curl \
+ fzf \
+ zoxide \
+ btop \
+ unzip \
+ build-essential
+
 if ! command -v oh-my-posh &> /dev/null; then
     curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin
 fi
 
-# Zinit
-ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
-if [ ! -d "$ZINIT_HOME" ]; then
-    git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
+
+ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
+
+if [ ! -d "$ANTIDOTE_DIR" ]; then
+  git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_DIR"
 fi
 
-# Set Shell
-[[ "$SHELL" != *"zsh"* ]] && sudo chsh -s $(which zsh) $(whoami)
+if command -v zsh >/dev/null 2>&1; then
+  if [[ "$SHELL" != "$(which zsh)" ]]; then
+    echo "Setting Zsh as default shell..."
+    chsh -s "$(which zsh)"
+  fi
+fi
 
-echo "✔ WSL bootstrap complete"
+echo "✔  WSL bootstrap complete"
