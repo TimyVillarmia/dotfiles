@@ -3,6 +3,10 @@ export TERM="xterm-256color"
 
 [[ -o interactive ]] || return
 
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
+fi
+
 THEME="$HOME/.theme.omp.json"
 
 if command -v oh-my-posh >/dev/null 2>&1; then
@@ -61,3 +65,9 @@ alias c="clear"
 alias reload="exec zsh"
 alias v="code"
 alias open="explorer.exe"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+eval "$(/home/timydev/.local/bin/mise activate zsh)" # added by https://mise.run/zsh

@@ -1,0 +1,39 @@
+# -------------------------
+# caches
+# -------------------------
+.cache/
+.npm/
+.nuget/
+.dotnet/
+.local/share/
+.zcompdump*
+.zcompdump
+
+# -------------------------
+# tools / runtimes
+# -------------------------
+.antidote/
+.vscode-server/
+.vscode-remote-containers/
+.ServiceHub/
+
+# -------------------------
+# secrets / keys (DO NOT SYNC)
+# -------------------------
+.ssh/
+.gnupg/
+.aws/
+.azure/
+
+# -------------------------
+# logs / history
+# -------------------------
+*.log
+*.tmp
+.zsh_history
+.bash_history
+
+# -------------------------
+# OS / misc
+# -------------------------
+.profile

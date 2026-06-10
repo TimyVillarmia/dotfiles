@@ -15,11 +15,21 @@ sudo apt install -y \
  unzip \
  build-essential
 
+# oh-my-posh
 if ! command -v oh-my-posh &> /dev/null; then
     curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin
 fi
 
+# mise
+if ! command -v mise &>/dev/null; then
+  echo "▶ Installing mise"
+  curl https://mise.run/zsh | sh
+fi
 
+# ensure mise is available for current session
+export PATH="$HOME/.local/bin:$PATH"
+
+# antidote
 ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
 
 if [ ! -d "$ANTIDOTE_DIR" ]; then
