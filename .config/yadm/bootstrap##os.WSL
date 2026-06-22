@@ -4,43 +4,46 @@ set -euo pipefail
 echo "▶ Bootstrapping WSL dev environment"
 
 sudo apt update
-
 sudo apt install -y \
- git \
- zsh \
- curl \
- fzf \
- zoxide \
- btop \
- unzip \
- build-essential
+  git \
+  zsh \
+  curl \
+  fzf \
+  zoxide \
+  btop \
+  unzip \
+  build-essential
 
-# oh-my-posh
 if ! command -v oh-my-posh &> /dev/null; then
+    echo "▶ Installing oh-my-posh"
     curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin
 fi
 
-# mise
+export PATH="$HOME/.local/bin:$PATH"
 if ! command -v mise &>/dev/null; then
-  echo "▶ Installing mise"
-  curl https://mise.run/zsh | sh
+    echo "▶ Installing mise"
+    curl https://mise.run/zsh | sh
 fi
 
-# ensure mise is available for current session
-export PATH="$HOME/.local/bin:$PATH"
-
-# antidote
 ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
+ZPLUGINS="$HOME/.zsh_plugins.txt"
 
 if [ ! -d "$ANTIDOTE_DIR" ]; then
-  git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_DIR"
+    echo "▶ Installing Antidote"
+    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_DIR"
+fi
+
+if [[ -f "$ANTIDOTE_DIR/antidote.zsh" && -f "$ZPLUGINS" ]]; then
+    echo "▶ Compiling Antidote Zsh Plugins"
+    zsh -c "source $ANTIDOTE_DIR/antidote.zsh && antidote bundle < $ZPLUGINS > $HOME/.zsh_plugins.zsh"
 fi
 
 if command -v zsh >/dev/null 2>&1; then
-  if [[ "$SHELL" != "$(which zsh)" ]]; then
-    echo "Setting Zsh as default shell..."
-    chsh -s "$(which zsh)"
-  fi
+    TARGET_SHELL="$(which zsh)"
+    if [[ "$SHELL" != "$TARGET_SHELL" ]]; then
+        echo "▶ Setting Zsh as default shell..."
+        sudo chsh -s "$TARGET_SHELL" "$USER"
+    fi
 fi
 
-echo "✔  WSL bootstrap complete"
+echo "✔ WSL bootstrap complete!"
