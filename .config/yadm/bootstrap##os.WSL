@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-echo "▶ Bootstrapping WSL Development Environment"
-
 sudo apt update
 
 sudo apt install -y \
@@ -14,32 +12,28 @@ sudo apt install -y \
     unzip \
     build-essential \
     ca-certificates \
-    fzf \
-    zoxide \
-    btop \
-    ripgrep \
-    fd-find
+    btop
 
 if ! command -v oh-my-posh >/dev/null 2>&1; then
-    echo "▶ Installing Oh My Posh"
-
-    curl -s https://ohmyposh.dev/install.sh \
-        | sudo bash -s -- -d /usr/local/bin
+    curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
 
 if ! command -v mise >/dev/null 2>&1; then
-    echo "▶ Installing Mise"
-
     curl https://mise.run | sh
+    export PATH="$HOME/.local/bin:$PATH"
 fi
+
+mise use -g fzf@latest
+mise use -g zoxide@latest
+mise use -g ripgrep@latest
+mise use -g fd@latest
+mise use -g usage@latest
 
 ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
 
 if [[ ! -d "$ANTIDOTE_DIR" ]]; then
-    echo "▶ Installing Antidote"
-
     git clone \
         --depth=1 \
         https://github.com/mattmc3/antidote.git \
@@ -49,8 +43,6 @@ fi
 ZPLUGINS="$HOME/.zsh_plugins.txt"
 
 if [[ -f "$ANTIDOTE_DIR/antidote.zsh" && -f "$ZPLUGINS" ]]; then
-    echo "▶ Compiling Plugin Bundle"
-
     zsh -c "
         source '$ANTIDOTE_DIR/antidote.zsh'
         antidote bundle < '$ZPLUGINS' > '$HOME/.zsh_plugins.zsh'
@@ -62,22 +54,15 @@ THEME="$HOME/.theme.omp.json"
 if command -v oh-my-posh >/dev/null 2>&1 && [[ -f "$THEME" ]]; then
     mkdir -p "$HOME/.cache"
 
-    echo "▶ Caching Oh My Posh Init"
-
     oh-my-posh init zsh \
         --config "$THEME" \
         > "$HOME/.cache/omp-init.zsh"
 fi
 
 if command -v zsh >/dev/null 2>&1; then
-
     TARGET_SHELL="$(command -v zsh)"
 
     if [[ "$SHELL" != "$TARGET_SHELL" ]]; then
-        echo "▶ Setting Zsh as Default Shell"
-
         sudo chsh -s "$TARGET_SHELL" "$USER"
     fi
 fi
-
-echo "✔  Bootstrap Complete"

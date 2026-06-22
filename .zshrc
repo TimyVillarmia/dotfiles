@@ -20,12 +20,12 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
 
+mkdir -p ~/.zsh/cache
+
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path ~/.zsh/cache
-
-mkdir -p ~/.zsh/cache
 
 if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)"
@@ -39,69 +39,30 @@ if [[ -f "$HOME/.cache/omp-init.zsh" ]]; then
     source "$HOME/.cache/omp-init.zsh"
 fi
 
-bindkey -e
-
-autoload -Uz up-line-or-beginning-search
-autoload -Uz down-line-or-beginning-search
-
-zle -N up-line-or-beginning-search
-zle -N down-line-or-beginning-search
-
-bindkey "^[[A" up-line-or-beginning-search
-bindkey "^[[B" down-line-or-beginning-search
-
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init zsh)"
 fi
 
 if command -v fzf >/dev/null 2>&1; then
-    eval "$(fzf --zsh)"
+    source <(fzf --zsh)
 fi
+
+export EDITOR="code --wait"
 
 alias c="clear"
 alias reload="exec zsh"
 alias v="code"
 alias open="explorer.exe"
 
-export NVM_DIR="$HOME/.nvm"
+alias ll="ls -lah"
+alias gs="git status"
+alias ga="git add"
+alias gc="git commit"
+alias gp="git push"
 
-if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+alias d="docker"
+alias dc="docker compose"
 
-    __load_nvm() {
-        unset -f nvm node npm npx yarn pnpm
-        source "$NVM_DIR/nvm.sh"
+alias k="kubectl"
 
-        [[ -s "$NVM_DIR/bash_completion" ]] && \
-            source "$NVM_DIR/bash_completion"
-    }
 
-    nvm() {
-        __load_nvm
-        nvm "$@"
-    }
-
-    node() {
-        __load_nvm
-        node "$@"
-    }
-
-    npm() {
-        __load_nvm
-        npm "$@"
-    }
-
-    npx() {
-        __load_nvm
-        npx "$@"
-    }
-
-    yarn() {
-        __load_nvm
-        yarn "$@"
-    }
-
-    pnpm() {
-        __load_nvm
-        pnpm "$@"
-    }
-fi
