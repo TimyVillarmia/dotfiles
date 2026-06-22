@@ -1,49 +1,83 @@
 #!/usr/bin/env bash
+
 set -euo pipefail
 
-echo "▶ Bootstrapping WSL dev environment"
+echo "▶ Bootstrapping WSL Development Environment"
 
 sudo apt update
-sudo apt install -y \
-  git \
-  zsh \
-  curl \
-  fzf \
-  zoxide \
-  btop \
-  unzip \
-  build-essential
 
-if ! command -v oh-my-posh &> /dev/null; then
-    echo "▶ Installing oh-my-posh"
-    curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin
+sudo apt install -y \
+    git \
+    zsh \
+    curl \
+    wget \
+    unzip \
+    build-essential \
+    ca-certificates \
+    fzf \
+    zoxide \
+    btop \
+    ripgrep \
+    fd-find
+
+if ! command -v oh-my-posh >/dev/null 2>&1; then
+    echo "▶ Installing Oh My Posh"
+
+    curl -s https://ohmyposh.dev/install.sh \
+        | sudo bash -s -- -d /usr/local/bin
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
-if ! command -v mise &>/dev/null; then
-    echo "▶ Installing mise"
-    curl https://mise.run/zsh | sh
+
+if ! command -v mise >/dev/null 2>&1; then
+    echo "▶ Installing Mise"
+
+    curl https://mise.run | sh
 fi
 
 ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
-ZPLUGINS="$HOME/.zsh_plugins.txt"
 
-if [ ! -d "$ANTIDOTE_DIR" ]; then
+if [[ ! -d "$ANTIDOTE_DIR" ]]; then
     echo "▶ Installing Antidote"
-    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_DIR"
+
+    git clone \
+        --depth=1 \
+        https://github.com/mattmc3/antidote.git \
+        "$ANTIDOTE_DIR"
 fi
 
+ZPLUGINS="$HOME/.zsh_plugins.txt"
+
 if [[ -f "$ANTIDOTE_DIR/antidote.zsh" && -f "$ZPLUGINS" ]]; then
-    echo "▶ Compiling Antidote Zsh Plugins"
-    zsh -c "source $ANTIDOTE_DIR/antidote.zsh && antidote bundle < $ZPLUGINS > $HOME/.zsh_plugins.zsh"
+    echo "▶ Compiling Plugin Bundle"
+
+    zsh -c "
+        source '$ANTIDOTE_DIR/antidote.zsh'
+        antidote bundle < '$ZPLUGINS' > '$HOME/.zsh_plugins.zsh'
+    "
+fi
+
+THEME="$HOME/.theme.omp.json"
+
+if command -v oh-my-posh >/dev/null 2>&1 && [[ -f "$THEME" ]]; then
+    mkdir -p "$HOME/.cache"
+
+    echo "▶ Caching Oh My Posh Init"
+
+    oh-my-posh init zsh \
+        --config "$THEME" \
+        > "$HOME/.cache/omp-init.zsh"
 fi
 
 if command -v zsh >/dev/null 2>&1; then
-    TARGET_SHELL="$(which zsh)"
+
+    TARGET_SHELL="$(command -v zsh)"
+
     if [[ "$SHELL" != "$TARGET_SHELL" ]]; then
-        echo "▶ Setting Zsh as default shell..."
+        echo "▶ Setting Zsh as Default Shell"
+
         sudo chsh -s "$TARGET_SHELL" "$USER"
     fi
 fi
 
-echo "✔ WSL bootstrap complete!"
+echo "✔  Bootstrap Complete"
