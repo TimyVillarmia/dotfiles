@@ -1,0 +1,6 @@
+[tools]
+fzf = "latest"
+zoxide = "latest"
+ripgrep = "latest"
+fd = "latest"
+usage = "latest"
