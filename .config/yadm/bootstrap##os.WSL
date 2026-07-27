@@ -21,7 +21,9 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 if ! command -v mise >/dev/null 2>&1; then
-    curl https://mise.run | sh
+    curl -fsSL https://mise.run -o /tmp/install-mise.sh
+    sh /tmp/install-mise.sh
+    rm /tmp/install-mise.sh
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
