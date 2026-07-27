@@ -24,14 +24,11 @@ if ! command -v mise >/dev/null 2>&1; then
     curl -fsSL https://mise.run -o /tmp/install-mise.sh
     sh /tmp/install-mise.sh
     rm /tmp/install-mise.sh
-    export PATH="$HOME/.local/bin:$PATH"
 fi
 
-mise use -g fzf@latest
-mise use -g zoxide@latest
-mise use -g ripgrep@latest
-mise use -g fd@latest
-mise use -g usage@latest
+export PATH="$HOME/.local/bin:$PATH"
+
+mise install
 
 ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
 
