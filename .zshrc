@@ -1,5 +1,7 @@
 [[ -o interactive ]] || return
 
+# Environment
+
 typeset -U path PATH
 
 path=(
@@ -9,23 +11,47 @@ path=(
 )
 
 export PATH
+export EDITOR="code --wait"
+
+# History
 
 HISTFILE="$HOME/.zsh_history"
-HISTSIZE=10000
-SAVEHIST=10000
+HISTSIZE=50000
+SAVEHIST=50000
 
 setopt APPEND_HISTORY
 setopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
 setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
+setopt HIST_FIND_NO_DUPS
+setopt HIST_VERIFY
 
-mkdir -p ~/.zsh/cache
+# Completion
+
+mkdir -p "$HOME/.cache/zsh"
+
+autoload -Uz compinit
+
+ZCOMPDUMP="$HOME/.cache/zsh/.zcompdump"
+
+if [[ ! -f "$ZCOMPDUMP" || "$ZCOMPDUMP" -nt "$HOME/.zshrc" ]]; then
+    compinit -d "$ZCOMPDUMP"
+else
+    compinit -C -d "$ZCOMPDUMP"
+fi
 
 zstyle ':completion:*' menu select
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' matcher-list \
+    'm:{a-z}={A-Z}' \
+    'r:|=*' \
+    'l:|=*'
+
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.zsh/cache
+zstyle ':completion:*' cache-path "$HOME/.cache/zsh"
+
+# Tool Initialization
 
 if command -v mise >/dev/null 2>&1; then
     eval "$(mise activate zsh)"
@@ -47,14 +73,16 @@ if command -v fzf >/dev/null 2>&1; then
     source <(fzf --zsh)
 fi
 
-export EDITOR="code --wait"
+# Aliases
 
 alias c="clear"
-alias reload="exec zsh"
+alias reload="source ~/.zshrc"
+
 alias v="code"
 alias open="explorer.exe"
 
 alias ll="ls -lah"
+
 alias gs="git status"
 alias ga="git add"
 alias gc="git commit"
@@ -64,5 +92,3 @@ alias d="docker"
 alias dc="docker compose"
 
 alias k="kubectl"
-
-
