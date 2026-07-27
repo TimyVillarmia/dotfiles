@@ -2,61 +2,90 @@
 
 set -euo pipefail
 
+# System Packages
+
 sudo apt update
 
 sudo apt install -y \
-    git \
-    zsh \
-    curl \
-    wget \
-    unzip \
     build-essential \
+    btop \
     ca-certificates \
-    btop
+    curl \
+    git \
+    unzip \
+    wget \
+    zsh
+
+export PATH="$HOME/.local/bin:$PATH"
+
+# Oh My Posh
 
 if ! command -v oh-my-posh >/dev/null 2>&1; then
-    curl -s https://ohmyposh.dev/install.sh | sudo bash -s -- -d /usr/local/bin
+    curl -fsSL https://ohmyposh.dev/install.sh \
+        -o /tmp/install-omp.sh
+
+    sudo bash /tmp/install-omp.sh -d /usr/local/bin
+
+    rm -f /tmp/install-omp.sh
 fi
 
-export PATH="$HOME/.local/bin:$PATH"
+# mise
 
 if ! command -v mise >/dev/null 2>&1; then
-    curl -fsSL https://mise.run -o /tmp/install-mise.sh
+    curl -fsSL https://mise.run \
+        -o /tmp/install-mise.sh
+
     sh /tmp/install-mise.sh
-    rm /tmp/install-mise.sh
+
+    rm -f /tmp/install-mise.sh
 fi
 
-export PATH="$HOME/.local/bin:$PATH"
-
+# Install tools declared in ~/.config/mise/config.toml
 mise install
+
+# Antidote
 
 ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
 
-if [[ ! -d "$ANTIDOTE_DIR" ]]; then
+if [[ -d "$ANTIDOTE_DIR/.git" ]]; then
+    git -C "$ANTIDOTE_DIR" pull --ff-only
+else
     git clone \
         --depth=1 \
         https://github.com/mattmc3/antidote.git \
         "$ANTIDOTE_DIR"
 fi
 
+# Generate Plugin Bundle
+
 ZPLUGINS="$HOME/.zsh_plugins.txt"
+ZBUNDLE="$HOME/.zsh_plugins.zsh"
 
 if [[ -f "$ANTIDOTE_DIR/antidote.zsh" && -f "$ZPLUGINS" ]]; then
-    zsh -c "
-        source '$ANTIDOTE_DIR/antidote.zsh'
-        antidote bundle < '$ZPLUGINS' > '$HOME/.zsh_plugins.zsh'
-    "
+    if [[ ! -f "$ZBUNDLE" || "$ZPLUGINS" -nt "$ZBUNDLE" ]]; then
+        zsh -c "
+            source '$ANTIDOTE_DIR/antidote.zsh'
+            antidote bundle < '$ZPLUGINS' > '$ZBUNDLE'
+        "
+    fi
 fi
+
+# Generate Oh My Posh Cache
 
 THEME="$HOME/.theme.omp.json"
+OMP_CACHE="$HOME/.cache/omp-init.zsh"
+
+mkdir -p "$HOME/.cache"
 
 if command -v oh-my-posh >/dev/null 2>&1 && [[ -f "$THEME" ]]; then
-    mkdir -p "$HOME/.cache"
-
-    oh-my-posh init zsh \
-        --config "$THEME" \
-        > "$HOME/.cache/omp-init.zsh"
+    if [[ ! -f "$OMP_CACHE" || "$THEME" -nt "$OMP_CACHE" ]]; then
+        oh-my-posh init zsh \
+            --config "$THEME" \
+            > "$OMP_CACHE"
+    fi
 fi
+
+# Default Shell
 
 if command -v zsh >/dev/null 2>&1; then
     TARGET_SHELL="$(command -v zsh)"
