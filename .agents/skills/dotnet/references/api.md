@@ -2,12 +2,40 @@
 
 Use this reference when a .NET application exposes or consumes HTTP APIs.
 
+## Official references
+
+Use the version-matched Microsoft documentation as the primary implementation reference:
+
+- ASP.NET Core docs: https://learn.microsoft.com/aspnet/core/
+- ASP.NET Core HTTP APIs: https://learn.microsoft.com/aspnet/core/fundamentals/http-requests
+- ASP.NET Core OpenAPI: https://learn.microsoft.com/aspnet/core/fundamentals/openapi/aspnetcore-openapi
+- .NET docs: https://learn.microsoft.com/dotnet/
+- .NET API browser: https://learn.microsoft.com/dotnet/api/
+- OpenAPI specification: https://spec.openapis.org/oas/latest.html
+
+Prefer official Microsoft documentation for ASP.NET Core/.NET behavior and the OpenAPI Initiative specification for the API contract standard. Do not rely on remembered behavior when a version-specific reference is available.
+
 ## Contract first
 
 - Treat the API contract as a deliberate public boundary.
 - Design resource names, HTTP methods, status codes, request/response shapes, and error behavior intentionally.
 - When OpenAPI is used, keep the document aligned with the actual implementation; avoid documenting behavior that the server does not provide.
 - Prefer stable contracts over leaking internal domain or persistence models.
+
+## OpenAPI version policy
+
+Use the newest OpenAPI version supported by the target ASP.NET Core/.NET version and the project's downstream tooling.
+
+As of the current .NET releases:
+
+- .NET 10 / ASP.NET Core 10 supports OpenAPI 3.1 and defaults generated documents to 3.1.
+- .NET 11 supports OpenAPI 3.2 and the latest ASP.NET Core 11 tooling defaults to 3.2.
+- OpenAPI 3.2 is the current latest OpenAPI 3.x specification. Do not claim that .NET 10's built-in generator produces 3.2 by default.
+- If a project targets .NET 10, use OpenAPI 3.1 unless its tooling explicitly supports another version or the project deliberately uses a different document-generation path.
+- If a project targets .NET 11, prefer OpenAPI 3.2 unless compatibility requirements require pinning 3.1.
+- If downstream consumers do not support the latest version, explicitly configure a compatible version rather than silently producing an incompatible document.
+
+When changing OpenAPI configuration, inspect the target framework and package versions first. Version-specific behavior is more authoritative than this summary.
 
 ## HTTP semantics
 
@@ -50,9 +78,13 @@ Return consistent validation errors. Prefer ProblemDetails-compatible responses 
 
 Avoid duplicating validation rules across controller, handler, and domain layers unless each layer is enforcing a different invariant.
 
-## OpenAPI and API UI
+## OpenAPI document quality
 
 Generate or maintain OpenAPI documentation from the actual contract. Include meaningful descriptions, parameters, request/response schemas, authentication requirements, and error responses.
+
+Use the OpenAPI specification supported by the target runtime. Pay particular attention to JSON Schema semantics in OpenAPI 3.1+; do not blindly copy OpenAPI 3.0-era `nullable` patterns into 3.1 documents.
+
+If using ASP.NET Core's built-in `Microsoft.AspNetCore.OpenApi`, inspect the generated document when changing transformers, schema metadata, nullable types, or other OpenAPI behavior.
 
 Scalar can be used as an interactive API UI when the project chooses it. Scalar is presentation tooling; it does not replace OpenAPI contract design.
 
@@ -87,7 +119,9 @@ See `references/security.md` for implementation guidance.
 
 Before completing an API change, verify:
 
+- Target .NET/ASP.NET Core version and package versions are known.
 - Request and response contracts are intentional.
+- OpenAPI version matches the target runtime and downstream compatibility requirements.
 - Status codes match HTTP semantics.
 - Validation behavior is consistent.
 - Error responses are documented and stable.
