@@ -4,130 +4,177 @@ Use this reference when a .NET application exposes or consumes HTTP APIs.
 
 ## Official references
 
-Use the version-matched Microsoft documentation as the primary implementation reference:
+Use version-matched Microsoft documentation as the primary implementation reference:
 
-- ASP.NET Core docs: https://learn.microsoft.com/aspnet/core/
-- ASP.NET Core HTTP APIs: https://learn.microsoft.com/aspnet/core/fundamentals/http-requests
+- ASP.NET Core: https://learn.microsoft.com/aspnet/core/
+- HTTP requests: https://learn.microsoft.com/aspnet/core/fundamentals/http-requests
 - ASP.NET Core OpenAPI: https://learn.microsoft.com/aspnet/core/fundamentals/openapi/aspnetcore-openapi
-- .NET docs: https://learn.microsoft.com/dotnet/
+- .NET: https://learn.microsoft.com/dotnet/
 - .NET API browser: https://learn.microsoft.com/dotnet/api/
 - OpenAPI specification: https://spec.openapis.org/oas/latest.html
 
-Prefer official Microsoft documentation for ASP.NET Core/.NET behavior and the OpenAPI Initiative specification for the API contract standard. Do not rely on remembered behavior when a version-specific reference is available.
+Prefer official Microsoft documentation for runtime/framework behavior and the OpenAPI Initiative specification for contract semantics. Inspect the actual target framework and package versions before relying on version-sensitive behavior.
 
-## Contract first
+## API shape
 
-- Treat the API contract as a deliberate public boundary.
-- Design resource names, HTTP methods, status codes, request/response shapes, and error behavior intentionally.
-- When OpenAPI is used, keep the document aligned with the actual implementation; avoid documenting behavior that the server does not provide.
-- Prefer stable contracts over leaking internal domain or persistence models.
+Treat the API as a public contract, even when the immediate consumer is an internal frontend.
 
-## OpenAPI version policy
+Design deliberately:
 
-Use the newest OpenAPI version supported by the target ASP.NET Core/.NET version and the project's downstream tooling.
+- resource and operation names
+- HTTP methods and status codes
+- request/response DTOs
+- validation and error behavior
+- authentication/authorization
+- pagination/filtering/sorting
+- idempotency and concurrency
+- OpenAPI documentation
 
-As of the current .NET releases:
+Do not expose persistence entities directly when doing so couples the contract to storage concerns or risks accidental data exposure.
 
-- .NET 10 / ASP.NET Core 10 supports OpenAPI 3.1 and defaults generated documents to 3.1.
-- .NET 11 supports OpenAPI 3.2 and the latest ASP.NET Core 11 tooling defaults to 3.2.
-- OpenAPI 3.2 is the current latest OpenAPI 3.x specification. Do not claim that .NET 10's built-in generator produces 3.2 by default.
-- If a project targets .NET 10, use OpenAPI 3.1 unless its tooling explicitly supports another version or the project deliberately uses a different document-generation path.
-- If a project targets .NET 11, prefer OpenAPI 3.2 unless compatibility requirements require pinning 3.1.
-- If downstream consumers do not support the latest version, explicitly configure a compatible version rather than silently producing an incompatible document.
+## Minimal APIs and controllers
 
-When changing OpenAPI configuration, inspect the target framework and package versions first. Version-specific behavior is more authoritative than this summary.
+Use the style already established by the project. For new minimal APIs, prefer endpoint handlers that are thin and delegate application behavior to a handler/service/use case.
+
+For .NET 10/C# 14, use modern APIs such as `TypedResults`, endpoint filters, built-in validation facilities, `ProblemDetails`, and built-in OpenAPI support where they fit the project.
+
+`TypedResults` is often preferable because the declared return type communicates the response contract, but `IResult`/`Results` remain valid when the surrounding API intentionally uses them or when the broader contract is clearer that way.
+
+Good:
+
+```csharp
+app.MapGet("/users/{id}", async Task<Results<Ok<UserDto>, NotFound>> (
+    Guid id,
+    IUserQueries queries,
+    CancellationToken cancellationToken) =>
+{
+    var user = await queries.GetAsync(id, cancellationToken);
+    return user is null
+        ? TypedResults.NotFound()
+        : TypedResults.Ok(user);
+});
+```
+
+Avoid mixing substantial business logic, persistence queries, and authorization decisions into a large endpoint lambda.
 
 ## HTTP semantics
 
-Use HTTP semantics consistently:
+Use semantics based on externally observable behavior:
 
-- `GET` retrieves representations and should not mutate state.
-- `POST` creates resources or performs non-idempotent operations where appropriate.
-- `PUT` replaces a resource representation and is idempotent when the contract defines it that way.
-- `PATCH` performs partial updates when supported by the chosen patch semantics.
-- `DELETE` removes or logically removes a resource according to the contract.
+- `GET` retrieves and should not mutate state.
+- `POST` creates or performs a non-idempotent operation where appropriate.
+- `PUT` replaces a representation and is idempotent when the contract defines it that way.
+- `PATCH` partially updates according to explicit patch semantics.
+- `DELETE` removes or logically removes according to the contract.
 
-Choose status codes based on the operation's externally observable result rather than implementation details.
+Typical status codes:
 
-Typical mappings include:
-
-- `200 OK` — successful response with a representation.
-- `201 Created` — resource created; provide its location when meaningful.
-- `202 Accepted` — work accepted for asynchronous processing.
-- `204 No Content` — successful operation with no response body.
-- `400 Bad Request` — malformed or invalid request semantics.
-- `401 Unauthorized` — authentication is required or invalid.
+- `200 OK` — successful representation.
+- `201 Created` — resource created; provide a location when meaningful.
+- `202 Accepted` — asynchronous work accepted.
+- `204 No Content` — success with no body.
+- `400 Bad Request` — malformed/invalid request semantics.
+- `401 Unauthorized` — authentication required or invalid.
 - `403 Forbidden` — authenticated caller is not permitted.
-- `404 Not Found` — requested resource does not exist or is intentionally undiscoverable.
-- `409 Conflict` — state conflict or concurrency conflict.
-- `422 Unprocessable Content` — use only when the API contract deliberately distinguishes semantic validation from malformed requests.
+- `404 Not Found` — resource absent or intentionally undiscoverable.
+- `409 Conflict` — state or concurrency conflict.
+- `422 Unprocessable Content` — only when the contract deliberately distinguishes semantic validation.
 - `429 Too Many Requests` — rate limit exceeded.
 - `500 Internal Server Error` — unexpected server failure.
 
-## Result pattern at the boundary
+Do not select a status code merely because an internal exception or framework type has a particular name.
 
-If the application uses a Result/ErrorOr-style model, translate expected failures at the HTTP boundary. Do not expose internal result types as the API contract unless that is an intentional public design.
+## ProblemDetails and errors
 
-Map domain/application errors to meaningful HTTP semantics. Keep unexpected exceptions on the centralized error-handling path rather than converting every exception into an application-level result.
+For HTTP APIs, use a consistent error representation. `ProblemDetails` is the standard ASP.NET Core-friendly mechanism for many APIs and aligns with RFC 9457.
+
+If the application uses a Result/ErrorOr-style model, translate expected application failures at the HTTP boundary:
+
+```csharp
+return result.Match(
+    success => TypedResults.Ok(success.ToDto()),
+    error => error.Type switch
+    {
+        ErrorType.NotFound => TypedResults.NotFound(),
+        ErrorType.Conflict => TypedResults.Conflict(),
+        _ => TypedResults.Problem(statusCode: 400, title: error.Code)
+    });
+```
+
+Keep unexpected exceptions on centralized exception-handling paths. Do not catch every exception in every endpoint just to turn it into a result.
 
 ## Validation
 
-Validate input at the boundary and enforce business invariants in the appropriate application/domain layer. Do not rely on client validation for security or correctness.
+Validate request shape and basic constraints at the boundary. Enforce business invariants in the application/domain layer.
 
-Return consistent validation errors. Prefer ProblemDetails-compatible responses where appropriate.
+Avoid duplicating identical rules across multiple layers. Each layer should validate the invariants it owns.
 
-Avoid duplicating validation rules across controller, handler, and domain layers unless each layer is enforcing a different invariant.
+For .NET 10, evaluate built-in validation support before adding a validation dependency. If the project already uses FluentValidation or another established validator, follow that convention.
 
-## OpenAPI document quality
+Never treat client-side validation as a security control.
 
-Generate or maintain OpenAPI documentation from the actual contract. Include meaningful descriptions, parameters, request/response schemas, authentication requirements, and error responses.
+## OpenAPI
 
-Use the OpenAPI specification supported by the target runtime. Pay particular attention to JSON Schema semantics in OpenAPI 3.1+; do not blindly copy OpenAPI 3.0-era `nullable` patterns into 3.1 documents.
+Keep generated documentation aligned with actual behavior. Document meaningful descriptions, parameters, request/response schemas, auth requirements, and error responses.
 
-If using ASP.NET Core's built-in `Microsoft.AspNetCore.OpenApi`, inspect the generated document when changing transformers, schema metadata, nullable types, or other OpenAPI behavior.
+OpenAPI version must match the target runtime and downstream tooling:
 
-Scalar can be used as an interactive API UI when the project chooses it. Scalar is presentation tooling; it does not replace OpenAPI contract design.
+- .NET 10 / ASP.NET Core 10: use OpenAPI 3.1 by default.
+- .NET 11 / ASP.NET Core 11: prefer OpenAPI 3.2 unless compatibility requires 3.1.
+- If consumers require an older compatible version, configure it deliberately rather than silently breaking them.
+
+For OpenAPI 3.1+, use JSON Schema semantics correctly; do not blindly carry forward OpenAPI 3.0-era `nullable` patterns.
+
+If using `Microsoft.AspNetCore.OpenApi`, inspect the generated document after changing schema metadata or transformers.
+
+Scalar may be used as an API UI when the project chooses it. It is presentation tooling and does not replace contract design.
 
 ## Pagination, filtering, and sorting
 
-For collection endpoints:
+For collections:
 
-- Bound result sizes.
-- Define pagination semantics explicitly.
-- Prefer stable ordering before applying pagination.
-- Validate page size and filter/sort inputs.
-- Avoid exposing arbitrary database expressions or column names directly from clients.
-- Consider cursor/keyset pagination when large or frequently changing datasets make offset pagination unsuitable.
+- bound result sizes
+- define pagination semantics explicitly
+- apply stable ordering before pagination
+- validate page size and filters
+- allow-list sortable/filterable fields
+- avoid arbitrary database expressions from clients
 
-## Idempotency and concurrency
+Offset pagination is simple and often sufficient. Keyset/cursor pagination is worth considering for large or frequently changing datasets.
 
-For operations that may be retried, explicitly decide whether the operation is naturally idempotent or requires an idempotency mechanism.
+## Idempotency, retries, and concurrency
 
-For concurrent updates, define the conflict behavior. Optimistic concurrency commonly maps a detected state conflict to `409 Conflict` when that matches the API contract.
+For retryable operations, determine whether the operation is naturally idempotent. If not, consider an explicit idempotency mechanism.
 
-Do not silently overwrite newer state merely because the client submitted an older representation.
+For concurrent updates, define conflict behavior rather than silently overwriting newer state. Optimistic concurrency commonly maps to `409 Conflict` when that matches the contract.
 
-## Authentication and authorization
+For outbound HTTP, use managed clients and the project's configured resilience strategy. Do not add retries blindly; retries can amplify load and duplicate non-idempotent operations.
 
-API design identifies where authentication and authorization participate in the contract; security guidance determines how they are safely implemented.
+## API anti-patterns
 
-Do not confuse authentication (`401`) with authorization (`403`). Resource-level authorization must happen against the actual resource being accessed, not only against an endpoint or broad role.
+❌ Returning EF entities directly from public endpoints.
 
-See `references/security.md` for implementation guidance.
+❌ A single endpoint that performs validation, business rules, database queries, mapping, and external calls inline.
 
-## API design checklist
+❌ Unbounded collection endpoints.
 
-Before completing an API change, verify:
+❌ Trusting client-supplied role/tenant identifiers for authorization.
 
-- Target .NET/ASP.NET Core version and package versions are known.
-- Request and response contracts are intentional.
-- OpenAPI version matches the target runtime and downstream compatibility requirements.
-- Status codes match HTTP semantics.
-- Validation behavior is consistent.
-- Error responses are documented and stable.
-- Authorization is enforced at the correct resource boundary.
-- Pagination/filtering/sorting cannot create unbounded or unsafe queries.
-- OpenAPI reflects actual behavior.
-- Serialization does not accidentally expose internal fields or sensitive data.
-- Retries, idempotency, and concurrency behavior are understood.
-- Tests cover the externally observable contract.
+❌ Catching `Exception` in every endpoint.
+
+❌ Creating `new HttpClient()` repeatedly for application requests.
+
+❌ Documenting an OpenAPI contract that differs from the actual endpoint behavior.
+
+## API checklist
+
+- Target runtime and package versions are known.
+- Contract and DTOs are intentional.
+- HTTP semantics and status codes are correct.
+- Validation and errors are consistent.
+- Authorization is enforced at the resource boundary.
+- Collections are bounded and deterministically ordered.
+- Retries/idempotency/concurrency are understood.
+- OpenAPI matches implementation and consumer compatibility.
+- Responses do not expose internal or sensitive data.
+- Tests verify externally observable behavior.
