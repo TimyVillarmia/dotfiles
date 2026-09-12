@@ -4,14 +4,13 @@ Use this reference when working with Entity Framework Core, relational persisten
 
 ## DbContext
 
-- Treat `DbContext` as a short-lived unit of work.
-- Use dependency injection with an appropriate lifetime for the application model.
-- Do not share a context concurrently across unrelated operations.
-- Keep persistence configuration close to the model while avoiding unnecessary infrastructure abstraction.
+Treat `DbContext` as a short-lived unit of work and use dependency injection with the lifetime appropriate to the application model. Never share a context concurrently across unrelated operations.
+
+For background services or parallel work, create an explicit scope/context per unit of work rather than reusing a request-scoped context.
 
 ## Modeling
 
-Model actual domain and data constraints explicitly:
+Model actual domain and database constraints explicitly:
 
 - required vs optional properties
 - keys and alternate keys
@@ -30,93 +29,169 @@ Design queries around the data actually needed.
 
 - Prefer projection over loading full entities when only a subset is required.
 - Use `AsNoTracking()` for read-only entity queries when tracking provides no value.
-- Consider identity resolution or tracking when duplicate entity instances would cause correctness issues.
+- Tracking is appropriate when the unit of work will modify loaded entities.
+- Consider identity resolution when a no-tracking query materializes repeated references that need identity consistency.
 - Avoid unnecessary `Include`; projection is often a better read model.
 - Bound result sets.
-- Apply filtering and ordering before materialization.
+- Filter and order before materialization.
 - Avoid loading large collections into memory when the database can perform the operation.
-- Inspect generated SQL when query behavior or performance is uncertain.
+- Inspect generated SQL when behavior or performance is uncertain.
 
-For CQRS-style queries, projecting directly to a DTO/read model is often preferable to materializing domain entities first.
+Good read model:
+
+```csharp
+var users = await db.Users
+    .AsNoTracking()
+    .Where(x => x.IsActive)
+    .OrderBy(x => x.Email)
+    .Select(x => new UserDto(x.Id, x.Email))
+    .ToListAsync(cancellationToken);
+```
+
+Anti-pattern:
+
+```csharp
+var users = await db.Users
+    .Include(x => x.Profile)
+    .ToListAsync(cancellationToken);
+
+return users.Select(x => new UserDto(x.Id, x.Email));
+```
+
+The second form can load columns/rows that the endpoint never needs.
+
+## Related data and query shape
+
+Be deliberate about eager, explicit, and lazy loading. Lazy loading can hide database round trips and create N+1 behavior; do not enable it without understanding the trade-off.
+
+When multiple collection relationships are included, evaluate whether a single query creates cartesian explosion. Split queries can help but introduce additional round trips and can have consistency implications.
+
+Do not choose `AsSplitQuery()` or `AsSingleQuery()` as a universal rule; choose based on query shape, provider behavior, consistency needs, and measurement.
 
 ## Pagination
 
-Always consider result size for collection queries. Use deterministic ordering before pagination.
+Bound collection queries and use deterministic ordering before pagination.
 
 Offset pagination is simple and appropriate for many cases. For large datasets or frequently changing ordered data, consider keyset/cursor pagination.
 
+```csharp
+var page = await db.Assets
+    .AsNoTracking()
+    .Where(x => x.OwnerId == ownerId)
+    .OrderBy(x => x.Id)
+    .Skip(offset)
+    .Take(Math.Min(limit, 100))
+    .Select(x => new AssetDto(x.Id, x.Name))
+    .ToListAsync(cancellationToken);
+```
+
 Never construct SQL fragments from untrusted column names, filter expressions, or sort input.
 
-## Related data
+## Efficient writes
 
-Be deliberate about eager, explicit, and lazy loading. Lazy loading can hide database round trips and create N+1 behavior; do not enable it without understanding the trade-offs.
+For set-based changes where loading entities is unnecessary, consider `ExecuteUpdateAsync` or `ExecuteDeleteAsync`.
 
-When multiple collection relationships are included, evaluate whether a single query creates cartesian explosion. Split queries can help, but they also introduce additional round trips; choose based on measured query shape and consistency requirements.
+```csharp
+await db.Assets
+    .Where(x => x.IsArchived)
+    .ExecuteDeleteAsync(cancellationToken);
+```
+
+These operations bypass normal entity tracking and `SaveChanges` behavior. Consider concurrency, interceptors, domain events, audit behavior, and other invariants before using them.
+
+Do not use bulk/set-based operations merely because they are newer or shorter.
 
 ## Writes and transactions
 
-Keep write operations within a clear unit of work. EF Core's `SaveChanges` transaction behavior is often sufficient for a single save operation.
-
-Use explicit transactions when multiple database operations must commit atomically or when the workflow spans multiple saves that share transactional invariants.
+EF Core's `SaveChanges` transaction behavior is often sufficient for a single save operation. Use an explicit transaction when multiple database operations must commit atomically or a workflow spans multiple saves with shared transactional invariants.
 
 Do not wrap every operation in an explicit transaction by habit.
+
+If the configured provider/reliability strategy uses execution strategies or transient-failure retries, understand how explicit transactions interact with that strategy and use the provider/framework-recommended pattern.
 
 ## Concurrency
 
 Prefer optimistic concurrency when appropriate. Configure a concurrency token/version and handle `DbUpdateConcurrencyException` intentionally.
 
-Do not silently retry or overwrite conflicting state without understanding the business semantics.
+```csharp
+try
+{
+    await db.SaveChangesAsync(cancellationToken);
+}
+catch (DbUpdateConcurrencyException)
+{
+    // Translate according to application semantics; do not silently overwrite newer state.
+}
+```
 
-Concurrency failures should be translated at the application/API boundary into an appropriate conflict result.
+Do not silently retry or overwrite conflicting state without understanding the business semantics.
 
 ## Migrations
 
-Migrations are part of the application's schema evolution process.
+Migrations are part of schema evolution.
 
 - Review generated migrations instead of blindly applying them.
 - Check destructive operations carefully.
 - Consider deployment ordering for schema changes that must support multiple application versions.
 - Keep data migrations explicit when transformations cannot safely be represented as simple schema operations.
-- Never treat production schema changes as an incidental side effect of application startup unless that is an intentional deployment strategy.
+- Do not treat production schema changes as an incidental side effect of application startup unless that is an intentional deployment strategy.
 
-## Raw SQL and database-specific features
+If a dedicated migration service or Aspire orchestration is used by the repository, follow that established deployment pattern rather than introducing a second migration mechanism.
 
-EF Core LINQ should be the default when it expresses the query clearly and efficiently.
+## Raw SQL
 
-Raw SQL is appropriate when it provides a concrete benefit, such as database-specific functionality, a query shape EF cannot express well, or a measured performance requirement.
+LINQ should be the default when it expresses the query clearly and efficiently. Raw SQL is appropriate for database-specific functionality, query shapes EF cannot express well, or measured performance requirements.
 
-Always parameterize values. Do not interpolate untrusted input into SQL or database identifiers.
+Always parameterize values:
+
+```csharp
+var rows = await db.Assets
+    .FromSql($"SELECT * FROM Assets WHERE OwnerId = {ownerId}")
+    .ToListAsync(cancellationToken);
+```
+
+Do not concatenate untrusted input into SQL or identifiers. If dynamic identifiers are required, use a strict allow-list rather than treating them as ordinary parameter values.
 
 ## Interceptors and conversions
 
-Interceptors, value converters, conventions, and save/query hooks are powerful. Use them for cross-cutting persistence behavior that genuinely belongs at that boundary.
+Interceptors, value converters, conventions, and save/query hooks are powerful. Use them for cross-cutting persistence behavior that genuinely belongs at the persistence boundary.
 
-Avoid hiding significant business behavior inside persistence hooks where it becomes difficult to reason about control flow.
+Avoid hiding significant business behavior inside persistence hooks where control flow becomes difficult to reason about.
 
 ## Testing
 
-Test persistence behavior that depends on relational semantics against a relational database provider when practical. In-memory substitutes can behave differently from a relational database and should not be treated as equivalent merely because tests pass.
+Test persistence behavior that depends on relational semantics against a relational provider when practical. In-memory substitutes are not equivalent to a real relational database.
 
-Prefer focused integration tests for:
+Prefer focused integration tests for mappings/constraints, important queries, transactions, concurrency, and migration/schema compatibility.
 
-- mappings and constraints
-- important queries
-- transactions
-- concurrency behavior
-- migrations/schema compatibility
+## EF Core anti-patterns
 
-## EF Core performance checklist
+❌ Reusing one `DbContext` concurrently across tasks.
 
-When performance matters:
+❌ Loading full entities and large navigation graphs when a projection would suffice.
+
+❌ Lazy loading in code where query count is not observable or controlled.
+
+❌ Unbounded `ToListAsync()` on collection endpoints.
+
+❌ Generic repository wrappers that merely rename EF Core APIs.
+
+❌ Raw SQL built by string concatenation.
+
+❌ Explicit transactions around every operation without a transactional requirement.
+
+❌ `ExecuteUpdate`/`ExecuteDelete` without considering tracking, auditing, domain events, or concurrency implications.
+
+## Performance checklist
 
 1. Measure the actual operation.
 2. Inspect query count and generated SQL.
 3. Check indexes and execution plans when appropriate.
 4. Reduce unnecessary columns and rows.
-5. Check tracking and materialization costs.
+5. Check tracking/materialization costs.
 6. Look for N+1 queries and cartesian explosion.
 7. Check pagination and result bounds.
-8. Consider database-side computation before application-side materialization.
+8. Consider database-side computation before materialization.
 9. Re-measure after the smallest useful change.
 
 Do not add compiled queries, caching, raw SQL, or other optimizations without evidence that they address a real bottleneck.
