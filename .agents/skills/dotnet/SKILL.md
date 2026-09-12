@@ -39,14 +39,22 @@ An existing dependency or architecture is not automatically wrong because it dif
 
 1. Inspect repository instructions and relevant agent guidance.
 2. Identify the target .NET SDK, C# language version, frameworks, and package versions.
-3. Locate the application boundaries, entry points, tests, and affected code paths.
-4. Understand the existing architecture, dependency direction, and data flow.
+3. Locate application boundaries, entry points, tests, and affected code paths.
+4. Understand existing architecture, dependency direction, and data flow.
 5. Translate the task into concrete behavioral and technical requirements.
 6. Determine which references apply: API, architecture, EF Core, performance, security, or review.
 7. Check whether the required capability already exists in the framework or an existing dependency.
 8. For a new dependency, evaluate complexity, maintenance, security, performance, licensing, and whether a small explicit implementation would be sufficient.
 
 For a new project, choose architecture and dependencies from requirements and constraints rather than starting from a favorite template or library list.
+
+## Modern C# and .NET
+
+Use language and framework features supported by the repository's actual target version. For .NET 10/C# 14, be familiar with extension blocks, the `field` keyword, primary constructors, collection expressions, pattern matching, records, required members, nullable reference types, `IAsyncEnumerable<T>`, and other modern APIs.
+
+Use newer syntax when it improves clarity, correctness, or maintainability—not merely because it is new. Do not rewrite stable code solely to adopt newer syntax unless modernization is part of the task or the change has a concrete benefit.
+
+Prefer framework-provided abstractions for common concerns. Examples include `TimeProvider` for testable time, `IHttpClientFactory`/HTTP resilience infrastructure for outbound HTTP, built-in validation/OpenAPI/problem-details facilities where they fit, and `Channel<T>` for in-process producer/consumer workflows.
 
 ## Implementation guidance
 
@@ -60,13 +68,47 @@ For a new project, choose architecture and dependencies from requirements and co
 - Keep security decisions explicit and verify authorization at the resource boundary.
 - Avoid premature abstractions, speculative extensibility, and ceremony without a demonstrated need.
 
+## Patterns and anti-patterns
+
+Use this reasoning sequence for non-trivial patterns:
+
+**When to use → principle → implementation → why → trade-offs → anti-pattern → exceptions.**
+
+Common anti-patterns to actively check for include blocking async work (`.Result`, `.Wait()`), `new HttpClient()` for managed application HTTP, unbounded fan-out, fire-and-forget request work, N+1 database access, leaking persistence entities through public APIs, generic repositories over EF Core without a real boundary, local wall-clock time for domain/persistence semantics, and custom security primitives.
+
+These are not all absolute prohibitions. Evaluate the actual context and mechanism; distinguish a real defect from a stylistic preference.
+
+## Dependencies
+
+Before adding a dependency:
+
+1. Check whether the platform/framework already solves the problem.
+2. Check whether an existing project dependency already provides the capability.
+3. Consider a small explicit implementation when the problem is simple and non-sensitive.
+4. Add a third-party dependency when complexity, reliability, ecosystem support, or security makes it worthwhile.
+
+For a new dependency that is not already established by the repository, explain the trade-off and ask the user before adding it unless the task explicitly requested it or the repository requires it. Do not ask before using an existing dependency.
+
+Never implement cryptography, password hashing, token validation, OAuth/OIDC protocol behavior, or other security-sensitive primitives yourself merely to avoid a package.
+
+## Testing
+
+Choose tests by the behavior and boundary being verified:
+
+- Unit tests for pure domain/application logic and deterministic transformations.
+- Integration tests for HTTP wiring, serialization, dependency injection, authentication/authorization, and externally observable API behavior.
+- Relational database tests for behavior that depends on real database semantics when practical.
+- Contract tests when compatibility with external consumers is important.
+
+Do not mock EF Core into behaving like a relational database. Do not test implementation details merely to increase coverage. Test risk and behavior.
+
 ## .NET Aspire
 
 Use Aspire when the repository already uses it or when the task explicitly calls for Aspire-based orchestration. Aspire is an orchestration/developer-experience layer for distributed .NET applications; it should not be treated as a replacement for application architecture.
 
 - Inspect the existing AppHost, service projects, resources, and Aspire version before changing orchestration.
 - Prefer Aspire's built-in integrations and established repository patterns over custom orchestration code.
-- Keep application logic in the application/service projects rather than moving business behavior into the AppHost.
+- Keep application logic in application/service projects rather than moving business behavior into the AppHost.
 - Treat resource references, endpoints, configuration, service discovery, health checks, and environment wiring as deployment/runtime concerns.
 - Avoid coupling application code unnecessarily to Aspire-specific APIs when a normal .NET abstraction is sufficient.
 - Do not create a separate custom Aspire skill in this collection when the installed/official Aspire skill is available; use that official skill for detailed Aspire-specific workflows and current APIs.
@@ -106,6 +148,6 @@ Read only the reference needed for the current task:
 - `references/api.md` — ASP.NET Core APIs, HTTP semantics, OpenAPI, validation, errors, pagination, concurrency, and API boundaries.
 - `references/architecture.md` — pragmatic architecture, CQRS, Vertical Slice, Clean Architecture, boundaries, and dependency direction.
 - `references/efcore.md` — EF Core modeling, querying, transactions, concurrency, migrations, testing, and performance.
-- `references/performance.md` — measurement-first optimization across CPU, memory, async I/O, database, HTTP, serialization, and caching.
+- `references/performance.md` — measurement-first optimization across CPU, memory, async I/O, database, HTTP, serialization, caching, resilience, and concurrency.
 - `references/security.md` — authentication, authorization, validation, secrets, injection, SSRF, CSRF/CORS, transport security, and threat modeling.
 - `references/review.md` — senior-level defect-focused review across correctness, security, architecture, data access, performance, testing, and maintainability.
