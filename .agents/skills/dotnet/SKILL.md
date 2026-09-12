@@ -64,6 +64,8 @@ Use language and framework features supported by the repository's actual target 
 
 Use newer syntax when it improves clarity, correctness, or maintainability—not merely because it is new. Do not rewrite stable code solely to adopt newer syntax unless modernization is part of the task or the change has a concrete benefit.
 
+For detailed language-feature guidance, use `references/csharp.md` when the task involves C# syntax, idioms, language-version decisions, type-system design, async patterns, or modernization.
+
 Prefer framework-provided abstractions for common concerns. Examples include `TimeProvider` for testable time, `IHttpClientFactory`/HTTP resilience infrastructure for outbound HTTP, built-in validation/OpenAPI/problem-details facilities where they fit, and `Channel<T>` for in-process producer/consumer workflows.
 
 Always verify version-sensitive APIs and behavior against the repository's actual target and installed packages before relying on them.
@@ -184,6 +186,7 @@ Read only the reference needed for the current task. Do not load unrelated refer
 
 | Task involves | Reference |
 |---|---|
+| C# language features, syntax, idioms, type-system design, async patterns, modernization, language-version decisions | `references/csharp.md` |
 | ASP.NET Core HTTP APIs, endpoint contracts, OpenAPI, validation, errors, pagination | `references/api.md` |
 | Architecture, CQRS, Vertical Slice, Clean Architecture, boundaries, dependency direction | `references/architecture.md` |
 | EF Core, database queries, modeling, transactions, concurrency, migrations, persistence testing | `references/efcore.md` |
