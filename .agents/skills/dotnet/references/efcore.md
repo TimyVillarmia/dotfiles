@@ -136,7 +136,30 @@ Migrations are part of schema evolution.
 - Keep data migrations explicit when transformations cannot safely be represented as simple schema operations.
 - Do not treat production schema changes as an incidental side effect of application startup unless that is an intentional deployment strategy.
 
-If a dedicated migration service or Aspire orchestration is used by the repository, follow that established deployment pattern rather than introducing a second migration mechanism.
+### Migration execution
+
+Treat migration execution as a deployment/runtime concern rather than an automatic consequence of application startup.
+
+For production systems, prefer an explicit migration mechanism when the application is deployed with multiple instances, independently scaled services, restricted database permissions, or a deployment pipeline that can execute database changes separately.
+
+A dedicated migration project, worker/service, deployment job, CI/CD step, or equivalent mechanism can provide a useful operational boundary. Choose the mechanism that fits the deployment environment rather than requiring a specific project shape.
+
+For small applications or simple deployments, an explicit deployment step or another established project mechanism may be simpler than introducing a dedicated migration service. Startup migration can also be reasonable when it is an intentional strategy and its operational and permission implications are understood.
+
+When choosing a migration strategy, consider:
+
+- deployment topology and number of application instances
+- database permissions available to the application
+- migration ordering and transactional requirements
+- rollback and failure behavior
+- startup availability requirements
+- CI/CD and infrastructure capabilities
+- observability and operational ownership
+- whether the additional project/service materially improves the boundary
+
+Avoid relying on multiple application instances racing to apply migrations unless the chosen mechanism and database provider make that behavior safe and intentional.
+
+If a dedicated migration service or Aspire orchestration is already used by the repository, follow that established deployment pattern rather than introducing a second migration mechanism.
 
 ## Raw SQL
 
