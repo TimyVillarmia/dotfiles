@@ -1,6 +1,6 @@
 ---
 name: dotnet
-description: Senior-level engineering guidance for building, modifying, debugging, and reviewing modern .NET and C# applications. Use when working in a .NET repository, especially when making architectural, API, EF Core, security, performance, dependency, or code-review decisions.
+description: Senior-level engineering guidance for building, modifying, debugging, and reviewing modern .NET and C# applications. Use when working in a .NET repository, especially when making architectural, API, EF Core, Aspire, security, performance, dependency, or code-review decisions.
 ---
 
 # .NET Engineering
@@ -59,6 +59,20 @@ For a new project, choose architecture and dependencies from requirements and co
 - Keep persistence concerns appropriate to the application's architecture; do not add generic abstractions over EF Core without a concrete benefit.
 - Keep security decisions explicit and verify authorization at the resource boundary.
 - Avoid premature abstractions, speculative extensibility, and ceremony without a demonstrated need.
+
+## .NET Aspire
+
+Use Aspire when the repository already uses it or when the task explicitly calls for Aspire-based orchestration. Aspire is an orchestration/developer-experience layer for distributed .NET applications; it should not be treated as a replacement for application architecture.
+
+- Inspect the existing AppHost, service projects, resources, and Aspire version before changing orchestration.
+- Prefer Aspire's built-in integrations and established repository patterns over custom orchestration code.
+- Keep application logic in the application/service projects rather than moving business behavior into the AppHost.
+- Treat resource references, endpoints, configuration, service discovery, health checks, and environment wiring as deployment/runtime concerns.
+- Avoid coupling application code unnecessarily to Aspire-specific APIs when a normal .NET abstraction is sufficient.
+- Do not create a separate custom Aspire skill in this collection when the installed/official Aspire skill is available; use that official skill for detailed Aspire-specific workflows and current APIs.
+- When Aspire behavior is version-sensitive, consult the official Aspire documentation and the repository's installed Aspire skill rather than relying on remembered APIs.
+
+Official Aspire documentation: https://learn.microsoft.com/dotnet/aspire/
 
 ## Personal defaults
 
