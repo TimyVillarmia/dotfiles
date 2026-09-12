@@ -1,11 +1,11 @@
 ---
 name: dotnet
-description: Senior-level engineering guidance for building, modifying, debugging, and reviewing modern .NET and C# applications. Use when working in a .NET repository, especially when making architectural, API, EF Core, Aspire, security, performance, dependency, or code-review decisions.
+description: Senior-level guidance for building, modifying, debugging, architecting, and reviewing .NET/C# applications. Use when a task involves .NET implementation or engineering decisions, especially ASP.NET Core APIs, EF Core, architecture, dependencies, security, performance, testing, Aspire, or code review.
 ---
 
 # .NET Engineering
 
-Use this skill as the default engineering guide for modern .NET work. It is intentionally project-neutral: repository-specific instructions, established conventions, and explicit task requirements take precedence over these defaults.
+Use this skill as the default engineering guide for modern .NET work. It is project-neutral: repository-specific instructions, established conventions, and explicit task requirements take precedence over these defaults.
 
 ## Core principles
 
@@ -42,11 +42,21 @@ An existing dependency or architecture is not automatically wrong because it dif
 3. Locate application boundaries, entry points, tests, and affected code paths.
 4. Understand existing architecture, dependency direction, and data flow.
 5. Translate the task into concrete behavioral and technical requirements.
-6. Determine which references apply: API, architecture, EF Core, performance, security, or review.
+6. Read only the references relevant to the task.
 7. Check whether the required capability already exists in the framework or an existing dependency.
 8. For a new dependency, evaluate complexity, maintenance, security, performance, licensing, and whether a small explicit implementation would be sufficient.
 
 For a new project, choose architecture and dependencies from requirements and constraints rather than starting from a favorite template or library list.
+
+## Scale the process to the task
+
+Match investigation, implementation, and validation depth to scope, risk, and uncertainty.
+
+- **Tiny change:** inspect the necessary context, make the smallest correct change, and run focused validation.
+- **Normal feature:** inspect affected architecture, dependencies, call sites, and relevant tests; use applicable references.
+- **Cross-cutting, security-sensitive, performance-sensitive, data-sensitive, or architectural change:** broaden investigation and validation proportionally.
+
+Do not perform heavyweight architectural analysis or broad refactoring for a trivial change without a concrete reason.
 
 ## Modern C# and .NET
 
@@ -55,6 +65,8 @@ Use language and framework features supported by the repository's actual target 
 Use newer syntax when it improves clarity, correctness, or maintainability—not merely because it is new. Do not rewrite stable code solely to adopt newer syntax unless modernization is part of the task or the change has a concrete benefit.
 
 Prefer framework-provided abstractions for common concerns. Examples include `TimeProvider` for testable time, `IHttpClientFactory`/HTTP resilience infrastructure for outbound HTTP, built-in validation/OpenAPI/problem-details facilities where they fit, and `Channel<T>` for in-process producer/consumer workflows.
+
+Always verify version-sensitive APIs and behavior against the repository's actual target and installed packages before relying on them.
 
 ## API and endpoint organization
 
@@ -75,7 +87,7 @@ Use an endpoint implementation to keep route definitions and HTTP concerns close
 
 This is a personal/project pattern, not a universal .NET requirement. Do not introduce `IEndpoint` into an existing project merely because this skill recommends it. Follow an established endpoint organization unless there is a concrete reason to change it. For small APIs, direct `MapGet`, `MapPost`, and similar route registration may be clearer.
 
-When designing endpoints, also apply the API guidance in `references/api.md`: deliberate HTTP semantics, validation, error contracts, authorization boundaries, pagination, idempotency, concurrency, and OpenAPI behavior.
+When designing endpoints, also apply `references/api.md`.
 
 ## Implementation guidance
 
@@ -91,26 +103,31 @@ When designing endpoints, also apply the API guidance in `references/api.md`: de
 
 ## Patterns and anti-patterns
 
-Use this reasoning sequence for non-trivial patterns:
+For non-trivial patterns, reason about: **when to use → principle → implementation → why → trade-offs → anti-pattern → exceptions.**
 
-**When to use → principle → implementation → why → trade-offs → anti-pattern → exceptions.**
+Actively check for concrete risks such as blocking async work, unmanaged HTTP clients, unbounded work, fire-and-forget request work, N+1 database access, persistence entities exposed through public APIs, generic repositories without a real boundary, incorrect time semantics, and custom security primitives.
 
-Common anti-patterns to actively check for include blocking async work (`.Result`, `.Wait()`), `new HttpClient()` for managed application HTTP, unbounded fan-out, fire-and-forget request work, N+1 database access, leaking persistence entities through public APIs, generic repositories over EF Core without a real boundary, local wall-clock time for domain/persistence semantics, and custom security primitives.
+These are review signals, not automatic prohibitions. Evaluate the actual context and distinguish a real defect from a stylistic preference. Use the domain reference for detailed guidance when the task warrants it.
 
-These are not all absolute prohibitions. Evaluate the actual context and mechanism; distinguish a real defect from a stylistic preference.
+## Dependency decisions
 
-## Dependencies
+Use this decision order:
 
-Before adding a dependency:
+```text
+Framework/platform capability
+        ↓
+Existing project dependency
+        ↓
+Small explicit implementation for simple, non-sensitive functionality
+        ↓
+New third-party dependency when its value justifies the added cost
+```
 
-1. Check whether the platform/framework already solves the problem.
-2. Check whether an existing project dependency already provides the capability.
-3. Consider a small explicit implementation when the problem is simple and non-sensitive.
-4. Add a third-party dependency when complexity, reliability, ecosystem support, or security makes it worthwhile.
+Before adding a new dependency, consider complexity, reliability, ecosystem support, security, performance, licensing, maintenance, and migration/lock-in cost.
 
 For a new dependency that is not already established by the repository, explain the trade-off and ask the user before adding it unless the task explicitly requested it or the repository requires it. Do not ask before using an existing dependency.
 
-Never implement cryptography, password hashing, token validation, OAuth/OIDC protocol behavior, or other security-sensitive primitives yourself merely to avoid a package.
+Security-sensitive primitives are an explicit exception: prefer established framework/library implementations for cryptography, password hashing, token validation, OAuth/OIDC protocol behavior, and similar primitives rather than writing them yourself to save a dependency.
 
 ## Testing
 
@@ -132,10 +149,8 @@ Use Aspire when the repository already uses it or when the task explicitly calls
 - Keep application logic in application/service projects rather than moving business behavior into the AppHost.
 - Treat resource references, endpoints, configuration, service discovery, health checks, and environment wiring as deployment/runtime concerns.
 - Avoid coupling application code unnecessarily to Aspire-specific APIs when a normal .NET abstraction is sufficient.
-- Do not create a separate custom Aspire skill in this collection when the installed/official Aspire skill is available; use that official skill for detailed Aspire-specific workflows and current APIs.
-- When Aspire behavior is version-sensitive, consult the official Aspire documentation and the repository's installed Aspire skill rather than relying on remembered APIs.
-
-Official Aspire documentation: https://learn.microsoft.com/dotnet/aspire/
+- Use the installed/official Aspire skill for detailed Aspire-specific workflows and current APIs when available.
+- When Aspire behavior is version-sensitive, verify it against the repository and current official documentation rather than relying on remembered APIs.
 
 ## Personal defaults
 
@@ -152,24 +167,28 @@ Existing projects may use MediatR, Mapster, another result library, a different 
 
 ## Validation
 
-After changes:
+After changes, validate proportionally to risk:
 
 1. Format/analyze the affected project when appropriate.
-2. Build the smallest useful scope first, then the relevant solution.
-3. Run focused tests, followed by broader tests when practical.
+2. Build the smallest useful scope first, then the relevant solution when warranted.
+3. Run focused tests, followed by broader tests when practical and relevant.
 4. Verify API contracts, database behavior, migrations, or security behavior when affected.
 5. Review the final diff for unintended changes, unnecessary complexity, and regressions.
 6. If performance is relevant, compare measurements before and after.
 
 Do not claim a change is verified when the relevant validation was not actually performed.
 
-## Reference guidance
+## Reference routing
 
-Read only the reference needed for the current task:
+Read only the reference needed for the current task. Do not load unrelated references merely because they exist.
 
-- `references/api.md` — ASP.NET Core APIs, HTTP semantics, OpenAPI, validation, errors, pagination, concurrency, and API boundaries.
-- `references/architecture.md` — pragmatic architecture, CQRS, Vertical Slice, Clean Architecture, boundaries, and dependency direction.
-- `references/efcore.md` — EF Core modeling, querying, transactions, concurrency, migrations, testing, and performance.
-- `references/performance.md` — measurement-first optimization across CPU, memory, async I/O, database, HTTP, serialization, caching, resilience, and concurrency.
-- `references/security.md` — authentication, authorization, validation, secrets, injection, SSRF, CSRF/CORS, transport security, and threat modeling.
-- `references/review.md` — senior-level defect-focused review across correctness, security, architecture, data access, performance, testing, and maintainability.
+| Task involves | Reference |
+|---|---|
+| ASP.NET Core HTTP APIs, endpoint contracts, OpenAPI, validation, errors, pagination | `references/api.md` |
+| Architecture, CQRS, Vertical Slice, Clean Architecture, boundaries, dependency direction | `references/architecture.md` |
+| EF Core, database queries, modeling, transactions, concurrency, migrations, persistence testing | `references/efcore.md` |
+| A measured/suspected performance problem or optimization work | `references/performance.md` |
+| Authentication, authorization, untrusted input, secrets, injection, SSRF, browser security, threat modeling | `references/security.md` |
+| Reviewing a diff, pull request, implementation, or completed change | `references/review.md` |
+
+If a task crosses multiple areas, read the smallest combination of references that covers the affected decisions.
