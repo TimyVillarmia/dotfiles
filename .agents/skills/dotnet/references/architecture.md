@@ -6,19 +6,27 @@ Use this reference when designing or changing application structure, boundaries,
 
 Architecture is a means to satisfy requirements and constraints. Do not choose an architecture because it is fashionable or because a template exists.
 
-Consider:
-
-- business/domain complexity
-- team size and ownership
-- deployment topology
-- operational requirements
-- expected change patterns
-- integration boundaries
-- testing needs
-- performance and scaling requirements
-- security and compliance constraints
+Consider business/domain complexity, team ownership, deployment topology, operational requirements, change patterns, integration boundaries, testing needs, performance/scaling, security, and compliance.
 
 Prefer the least complex architecture that preserves the boundaries the system actually needs.
+
+## Architecture decision flow
+
+```text
+Is there a real boundary or invariant to protect?
+├─ No -> keep the code local and simple.
+└─ Yes
+   ├─ Is the boundary a business capability/use case?
+   │  └─ Consider a vertical slice/module.
+   ├─ Does dependency direction/domain isolation matter?
+   │  └─ Consider Clean Architecture principles.
+   ├─ Do commands and queries materially differ?
+   │  └─ Consider CQRS.
+   └─ Does deployment/ownership/scaling require separation?
+      └─ Consider a service boundary.
+```
+
+A pattern is justified by the problem it solves, not by its popularity.
 
 ## Pragmatic default
 
@@ -41,30 +49,22 @@ Feature
 └── Tests
 ```
 
-Use this when feature cohesion and independent change are more valuable than a shared horizontal layer structure.
+Use this when feature cohesion and independent change are more valuable than shared horizontal layers.
 
 CQRS fits naturally when commands and queries have materially different behavior, data access, performance, or models. It does not require separate databases or services.
-
-A common flow is:
 
 ```text
 Command -> Mediator -> Application/Domain -> Persistence
 Query   -> Mediator -> Persistence -> Projection -> DTO
 ```
 
-This is a pattern, not a universal requirement.
-
 ## Clean Architecture
 
 Clean Architecture is useful when dependency direction and domain isolation are important. Its value comes from controlling dependencies and protecting business rules, not from creating a fixed number of projects.
 
-Avoid layers that contain no meaningful behavior merely to satisfy an architectural diagram.
-
-A pragmatic implementation may combine Clean Architecture principles with vertical slices when that better matches the system.
+Avoid layers that contain no meaningful behavior merely to satisfy an architectural diagram. Combining Clean Architecture principles with vertical slices can be a pragmatic choice.
 
 ## Dependency direction
-
-Dependencies should point toward stable, meaningful abstractions and business rules rather than toward implementation details when isolation is required.
 
 Ask:
 
@@ -73,45 +73,86 @@ Ask:
 - Which dependency is likely to vary?
 - Is this boundary protecting a real invariant or merely adding indirection?
 
+Dependencies should point toward stable business rules when isolation is required, while infrastructure remains replaceable where that boundary has real value.
+
 Do not create abstractions solely because a dependency is technically replaceable.
 
 ## Repositories and persistence abstractions
 
 EF Core already provides substantial abstraction over database access. Do not introduce a generic repository or unit-of-work wrapper by default.
 
-Add a persistence abstraction when it provides a concrete architectural benefit, such as isolating a meaningful external boundary, enforcing a domain-specific persistence contract, or enabling a required testing strategy.
+Good abstraction:
 
-Avoid abstractions that simply rename `DbSet`, `SaveChangesAsync`, or LINQ without adding useful behavior.
+```csharp
+public interface IAssetNumberGenerator
+{
+    Task<string> GenerateAsync(CancellationToken cancellationToken);
+}
+```
+
+This can represent a meaningful external/business boundary.
+
+Poor abstraction:
+
+```csharp
+public interface IRepository<T>
+{
+    Task<T?> GetAsync(Guid id);
+    Task AddAsync(T entity);
+    Task SaveAsync();
+}
+```
+
+If it merely renames `DbSet`, LINQ, and `SaveChangesAsync`, it adds indirection without protecting a useful boundary.
 
 ## Mapping
 
-Keep mappings explicit when they clarify boundaries and transformations. Explicit `ToEntity()` and `ToDto()` methods are a preferred default for new projects when they keep transformations obvious and easy to debug.
+Keep mappings explicit when they clarify transformations and boundaries. For new projects, explicit `ToEntity()` / `ToDto()` methods are a preferred default when they remain readable.
 
-Existing projects may use Mapster, AutoMapper, or another mapping approach. Do not replace an established mapper without a concrete reason.
+```csharp
+public static UserDto ToDto(this User user) =>
+    new(user.Id, user.Email);
+```
+
+Existing projects may use Mapster, AutoMapper, or another mapper. Do not replace an established mapper without a concrete reason.
 
 ## Dependency selection
 
-For new projects, evaluate implementation options in this order:
+For new projects, evaluate options in this order:
 
-1. Existing project/framework capability.
+1. Existing platform/framework capability.
 2. Existing dependency already accepted by the project.
 3. Small explicit implementation when the problem is simple and non-sensitive.
 4. New dependency when complexity, reliability, ecosystem support, or security makes it worthwhile.
 
-For a new third-party dependency, explain the trade-off before adding it unless the task explicitly requested it or the repository already establishes that dependency.
+For a new third-party dependency not already established by the repository, explain the trade-off and ask the user before adding it unless the task explicitly requested it or the repository requires it.
 
 Never implement security-sensitive primitives yourself merely to avoid a package.
 
-## Architecture review questions
+## Architecture anti-patterns
 
-Before introducing a new layer, project, service, abstraction, or dependency, ask:
+❌ Microservices without independent deployment, ownership, scaling, or isolation needs.
+
+❌ Generic repositories that only wrap EF Core.
+
+❌ An abstraction for every class “just in case” it needs mocking.
+
+❌ A shared utility/project that becomes a dumping ground for unrelated behavior.
+
+❌ Business rules implemented in controllers/endpoints, persistence hooks, or AppHost orchestration merely because those layers are convenient.
+
+❌ Architecture where every feature crosses many projects for trivial changes.
+
+## Review questions
+
+Before introducing a layer, project, service, abstraction, or dependency:
 
 - What problem does this solve?
 - What coupling does it remove?
 - What invariant does it protect?
 - What complexity does it introduce?
 - Could the existing framework or architecture solve this cleanly?
-- Will this make common changes easier or harder?
+- Will common changes become easier or harder?
 - Is the boundary likely to remain stable?
 
-If the answer is primarily "future flexibility," prefer waiting until the need is demonstrated.
+If the answer is primarily “future flexibility,” prefer waiting until the need is demonstrated.
