@@ -56,6 +56,27 @@ Use newer syntax when it improves clarity, correctness, or maintainability—not
 
 Prefer framework-provided abstractions for common concerns. Examples include `TimeProvider` for testable time, `IHttpClientFactory`/HTTP resilience infrastructure for outbound HTTP, built-in validation/OpenAPI/problem-details facilities where they fit, and `Channel<T>` for in-process producer/consumer workflows.
 
+## API and endpoint organization
+
+For Minimal API applications, prefer clear endpoint organization that matches the size and architecture of the application.
+
+For larger APIs or feature/vertical-slice-oriented applications, a small endpoint abstraction such as `IEndpoint` is a useful personal default when it improves discoverability, registration, and separation of HTTP concerns from application logic. Keep the abstraction small and framework-aligned.
+
+Example pattern:
+
+```csharp
+public interface IEndpoint
+{
+    void Map(IEndpointRouteBuilder endpoints);
+}
+```
+
+Use an endpoint implementation to keep route definitions and HTTP concerns close to the feature while delegating business behavior to the appropriate application/use-case layer. Endpoint registration should remain explicit and easy to discover.
+
+This is a personal/project pattern, not a universal .NET requirement. Do not introduce `IEndpoint` into an existing project merely because this skill recommends it. Follow an established endpoint organization unless there is a concrete reason to change it. For small APIs, direct `MapGet`, `MapPost`, and similar route registration may be clearer.
+
+When designing endpoints, also apply the API guidance in `references/api.md`: deliberate HTTP semantics, validation, error contracts, authorization boundaries, pagination, idempotency, concurrency, and OpenAPI behavior.
+
 ## Implementation guidance
 
 - Use modern idiomatic C# appropriate to the repository's language version.
@@ -124,9 +145,10 @@ These are defaults for new projects, not universal rules:
 - Martinothamar.Mediator for mediator-based application flow.
 - A Result/ErrorOr-style result model for expected application failures.
 - Explicit `ToEntity()` / `ToDto()` mapping rather than mapping magic.
+- `IEndpoint` for feature-oriented Minimal API endpoint organization when the application is large enough to benefit from the abstraction.
 - Fewer dependencies and explicit implementations for small, non-sensitive functionality.
 
-Existing projects may use MediatR, Mapster, another result library, a different mediator, or a different architecture. Follow the project unless migration is part of the task.
+Existing projects may use MediatR, Mapster, another result library, a different mediator, direct route mapping, another endpoint abstraction, or a different architecture. Follow the project unless migration is part of the task.
 
 ## Validation
 
