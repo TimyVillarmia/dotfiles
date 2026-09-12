@@ -37,3 +37,15 @@
 # OS / misc
 # -------------------------
 .profile
+
+# -------------------------
+# Agent skills
+# -------------------------
+# Provider-managed/global skills
+.agents/skills/*
+
+# Personal skills
+!.agents/
+!.agents/skills/
+!.agents/skills/dotnet/
+!.agents/skills/dotnet/references/
