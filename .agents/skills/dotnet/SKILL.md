@@ -91,6 +91,12 @@ This is a personal/project pattern, not a universal .NET requirement. Do not int
 
 When designing endpoints, also apply `references/api.md`.
 
+## Configuration and hosted work
+
+For application configuration, prefer modern .NET configuration and Options patterns rather than scattering ad hoc `IConfiguration` access throughout application code. Choose the appropriate options lifetime and validation behavior for the configuration's semantics, and validate required configuration early when appropriate.
+
+For hosted/background work, account for cancellation, graceful shutdown, service lifetimes and scoped dependencies, exception behavior, retries, and overlap/concurrency requirements. Follow the repository's established hosting pattern rather than introducing infrastructure without a concrete need.
+
 ## Implementation guidance
 
 - Use modern idiomatic C# appropriate to the repository's language version.
@@ -125,9 +131,11 @@ Small explicit implementation for simple, non-sensitive functionality
 New third-party dependency when its value justifies the added cost
 ```
 
-Before adding a new dependency, consider complexity, reliability, ecosystem support, security, performance, licensing, maintenance, and migration/lock-in cost.
+Before adding a new dependency, consider complexity, reliability, ecosystem support, security, performance, licensing, and migration/lock-in cost.
 
 For a new dependency that is not already established by the repository, explain the trade-off and ask the user before adding it unless the task explicitly requested it or the repository requires it. Do not ask before using an existing dependency.
+
+If execution is explicitly autonomous/headless and no user response is possible, do not silently introduce a new third-party dependency. Prefer an existing dependency or suitable framework capability when reasonable; otherwise stop at the dependency decision and report what is required, why it is justified, and what alternatives were considered.
 
 Security-sensitive primitives are an explicit exception: prefer established framework/library implementations for cryptography, password hashing, token validation, OAuth/OIDC protocol behavior, and similar primitives rather than writing them yourself to save a dependency.
 
