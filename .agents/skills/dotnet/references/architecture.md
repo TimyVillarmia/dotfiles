@@ -131,6 +131,8 @@ Never implement security-sensitive primitives yourself merely to avoid a package
 
 ## Architecture anti-patterns
 
+The following are common architectural warning signs, not automatic defects. Evaluate them against the project's requirements, constraints, existing conventions, and actual abstraction boundaries before recommending changes.
+
 ❌ Microservices without independent deployment, ownership, scaling, or isolation needs.
 
 ❌ Generic repositories that only wrap EF Core.
