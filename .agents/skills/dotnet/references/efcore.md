@@ -2,6 +2,11 @@
 
 Use this reference when working with Entity Framework Core, relational persistence, queries, transactions, migrations, or database-related performance.
 
+**Official references:**
+
+- [EF Core documentation](https://learn.microsoft.com/en-us/ef/core/)
+- [EF Core what's new](https://learn.microsoft.com/en-us/ef/core/what-is-new/)
+
 ## DbContext
 
 Treat `DbContext` as a short-lived unit of work and use dependency injection with the lifetime appropriate to the application model. Never share a context concurrently across unrelated operations.

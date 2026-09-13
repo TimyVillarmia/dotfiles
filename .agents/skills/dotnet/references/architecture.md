@@ -118,20 +118,17 @@ Existing projects may use Mapster, AutoMapper, or another mapper. Do not replace
 
 ## Dependency selection
 
-For new projects, evaluate options in this order:
+Apply the dependency decision order from the main `.NET Engineering` skill: prefer platform capabilities and existing project dependencies, then consider a small explicit implementation for simple non-sensitive functionality, and finally evaluate a new third-party dependency when its value justifies the added cost.
 
-1. Existing platform/framework capability.
-2. Existing dependency already accepted by the project.
-3. Small explicit implementation when the problem is simple and non-sensitive.
-4. New dependency when complexity, reliability, ecosystem support, or security makes it worthwhile.
+For architecture-specific decisions, consider whether the dependency creates a meaningful boundary, introduces coupling or lock-in, changes deployment/ownership concerns, or materially reduces complexity.
 
-For a new third-party dependency not already established by the repository, explain the trade-off and ask the user before adding it unless the task explicitly requested it or the repository requires it.
+Do not introduce a new dependency merely to satisfy an architectural preference. Follow the main skill's interactive/headless approval rule before adding one.
 
 Never implement security-sensitive primitives yourself merely to avoid a package.
 
 ## Architecture anti-patterns
 
-The following are common architectural warning signs, not automatic defects. Evaluate them against the project's requirements, constraints, existing conventions, and actual abstraction boundaries before recommending changes.
+The following are common architectural warning signs, not automatic defects. Evaluate them against the project's requirements, constraints, existing conventions, and actual abstraction boundaries before recommending changes. Do not refactor an established pattern without a concrete reason tied to the current task.
 
 ❌ Microservices without independent deployment, ownership, scaling, or isolation needs.
 
