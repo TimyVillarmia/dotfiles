@@ -49,3 +49,4 @@
 !.agents/skills/
 !.agents/skills/dotnet/
 !.agents/skills/dotnet/references/
+!.agents/skills/dotnet-scaffold/
