@@ -5,7 +5,7 @@ description: Scaffold new .NET solutions, projects, or features while preserving
 
 # .NET Scaffolding
 
-Use this workflow to create a complete, working .NET solution, project, or feature. Reuse the `dotnet` skill for engineering principles, architecture, C#/.NET version guidance, APIs, EF Core, testing, security, and dependency decisions. Do not duplicate those rules here.
+Use this workflow to create a complete, working .NET solution, project, or feature. This skill owns the scaffolding workflow; when the `dotnet` skill is available, apply its general .NET engineering guidance rather than duplicating it here.
 
 ## Scope
 
@@ -54,7 +54,9 @@ Use the requirements and repository evidence to decide:
 - boundaries and dependency direction
 - whether CQRS, Vertical Slice, Clean Architecture, Modular Monolith, or other patterns provide concrete value
 
-Prefer the simplest architecture that protects the real boundaries and requirements. Existing repository conventions take precedence. For a new project, apply the `dotnet` skill's personal defaults only after requirements and architecture have been established.
+Prefer the simplest architecture that protects the real boundaries and requirements. Existing repository conventions take precedence. For a genuinely new project, apply the `dotnet` skill's personal defaults only after requirements and architecture have been established.
+
+When adding a feature to an existing project, do not introduce a new architectural style merely because it is preferred for greenfield work. Follow the existing feature structure unless the task explicitly includes an architectural change or the existing structure cannot satisfy the requirement safely.
 
 ### 4. Decide dependencies
 
@@ -101,6 +103,8 @@ Wire the generated pieces into the application using its established conventions
 - persistence and migrations when applicable
 - serialization/OpenAPI behavior when applicable
 - local development/orchestration when the repository uses Aspire or similar tooling
+
+For Aspire-specific workflows, use the official Aspire Agent Skill when it is installed and available. Do not duplicate Aspire-specific instructions here.
 
 Keep infrastructure concerns in their appropriate project/boundary.
 
@@ -151,6 +155,7 @@ This skill does not:
 - automatically migrate an existing architecture to personal preferences
 - require a specific mediator, mapper, Result library, validation library, or architecture
 - introduce third-party dependencies silently
+- duplicate official specialized skills such as the Aspire Agent Skill
 - perform unrelated refactoring
 - replace a dedicated code-review workflow
 - require MCP servers, plugins, hooks, or other agent-specific tooling

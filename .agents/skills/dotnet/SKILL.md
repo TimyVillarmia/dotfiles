@@ -1,11 +1,11 @@
 ---
 name: dotnet
-description: Senior-level guidance for building, modifying, debugging, architecting, and reviewing .NET/C# applications. Use when a task involves .NET implementation or engineering decisions, especially ASP.NET Core APIs, EF Core, architecture, dependencies, security, performance, testing, Aspire, or code review.
+description: Senior-level guidance for building, modifying, debugging, architecting, and reviewing .NET/C# applications. Use when a task involves .NET or C# engineering, especially ASP.NET Core APIs, EF Core, architecture, dependencies, security, performance, testing, or code review.
 ---
 
 # .NET Engineering
 
-Use this skill as the default engineering guide for modern .NET work. It is project-neutral: repository-specific instructions, established conventions, and explicit task requirements take precedence over these defaults.
+Use this skill as the default engineering guide for modern .NET work. It provides general .NET engineering principles, task classification, reference routing, dependency decisions, and validation. Repository-specific instructions, established conventions, and explicit task requirements take precedence.
 
 ## Core principles
 
@@ -35,6 +35,23 @@ When guidance conflicts, use this order:
 
 An existing dependency or architecture is not automatically wrong because it differs from a preferred default. Change it only when the task requires it or the benefit clearly justifies the migration cost.
 
+## Classify the task
+
+Before implementation, determine the smallest set of concerns involved:
+
+| Task | Action |
+|---|---|
+| C# language, types, async, modernization | Read `references/csharp.md` |
+| ASP.NET Core, HTTP APIs, endpoints, OpenAPI | Read `references/api.md` |
+| Architecture, boundaries, CQRS, Vertical Slice | Read `references/architecture.md` |
+| EF Core, queries, modeling, transactions, migrations | Read `references/efcore.md` |
+| Performance investigation or optimization | Read `references/performance.md` |
+| Security, authentication, authorization, untrusted input | Read `references/security.md` |
+| Code/diff/PR review | Read `references/review.md` |
+| .NET Aspire-specific workflow or current Aspire APIs | Use the official Aspire Agent Skill when available |
+
+If a task crosses multiple areas, read only the smallest combination of references that covers the affected decisions. Do not load unrelated references merely because they exist.
+
 ## Before implementation
 
 1. Inspect repository instructions and relevant agent guidance.
@@ -42,11 +59,11 @@ An existing dependency or architecture is not automatically wrong because it dif
 3. Locate application boundaries, entry points, tests, and affected code paths.
 4. Understand existing architecture, dependency direction, and data flow.
 5. Translate the task into concrete behavioral and technical requirements.
-6. Read only the references relevant to the task.
+6. Classify the task and read only the relevant references.
 7. Check whether the required capability already exists in the framework or an existing dependency.
 8. For a new dependency, evaluate complexity, maintenance, security, performance, licensing, and whether a small explicit implementation would be sufficient.
 
-For a new project, choose architecture and dependencies from requirements and constraints rather than starting from a favorite template or library list.
+Do not ask questions that repository inspection can answer.
 
 ## Scale the process to the task
 
@@ -60,9 +77,7 @@ Do not perform heavyweight architectural analysis or broad refactoring for a tri
 
 ## Modern C# and .NET
 
-Use language and framework features supported by the repository's actual target version. For .NET 10/C# 14, be familiar with extension blocks, the `field` keyword, primary constructors, collection expressions, pattern matching, records, required members, nullable reference types, `IAsyncEnumerable<T>`, and other modern APIs.
-
-Use newer syntax when it improves clarity, correctness, or maintainability—not merely because it is new. Do not rewrite stable code solely to adopt newer syntax unless modernization is part of the task or the change has a concrete benefit.
+Use language and framework features supported by the repository's actual target version. Use newer syntax when it improves clarity, correctness, or maintainability—not merely because it is new. Do not rewrite stable code solely to adopt newer syntax unless modernization is part of the task.
 
 For detailed language-feature guidance, use `references/csharp.md` when the task involves C# syntax, idioms, language-version decisions, type-system design, async patterns, or modernization.
 
@@ -70,13 +85,13 @@ Prefer framework-provided abstractions for common concerns. Examples include `Ti
 
 Always verify version-sensitive APIs and behavior against the repository's actual target and installed packages before relying on them.
 
-## API and endpoint organization
+## API and application structure
 
 For Minimal API applications, prefer clear endpoint organization that matches the size and architecture of the application.
 
 For larger APIs or feature/vertical-slice-oriented applications, a small endpoint abstraction such as `IEndpoint` is a useful personal default when it improves discoverability, registration, and separation of HTTP concerns from application logic. Keep the abstraction small and framework-aligned.
 
-Example pattern:
+Example:
 
 ```csharp
 public interface IEndpoint
@@ -85,11 +100,9 @@ public interface IEndpoint
 }
 ```
 
-Use an endpoint implementation to keep route definitions and HTTP concerns close to the feature while delegating business behavior to the appropriate application/use-case layer. Endpoint registration should remain explicit and easy to discover.
+This is a personal/project pattern, not a universal .NET requirement. Do not introduce `IEndpoint` into an existing project merely because this skill recommends it. Follow an established endpoint organization unless there is a concrete reason to change it. For small APIs, direct route registration may be clearer.
 
-This is a personal/project pattern, not a universal .NET requirement. Do not introduce `IEndpoint` into an existing project merely because this skill recommends it. Follow an established endpoint organization unless there is a concrete reason to change it. For small APIs, direct `MapGet`, `MapPost`, and similar route registration may be clearer.
-
-When designing endpoints, also apply `references/api.md`.
+When designing endpoints, read `references/api.md`.
 
 ## Configuration and hosted work
 
@@ -109,13 +122,7 @@ For hosted/background work, account for cancellation, graceful shutdown, service
 - Keep security decisions explicit and verify authorization at the resource boundary.
 - Avoid premature abstractions, speculative extensibility, and ceremony without a demonstrated need.
 
-## Patterns and anti-patterns
-
-For non-trivial patterns, reason about: **when to use → principle → implementation → why → trade-offs → anti-pattern → exceptions.**
-
-Actively check for concrete risks such as blocking async work, unmanaged HTTP clients, unbounded work, fire-and-forget request work, N+1 database access, persistence entities exposed through public APIs, generic repositories without a real boundary, incorrect time semantics, and custom security primitives.
-
-These are review signals, not automatic prohibitions. Evaluate the actual context and distinguish a real defect from a stylistic preference. Use the domain reference for detailed guidance when the task warrants it.
+For domain-specific implementation guidance, route to the relevant reference rather than expanding this skill with duplicate material.
 
 ## Dependency decisions
 
@@ -152,19 +159,15 @@ Do not mock EF Core into behaving like a relational database. Do not test implem
 
 ## .NET Aspire
 
-Use Aspire when the repository already uses it or when the task explicitly calls for Aspire-based orchestration. Aspire is an orchestration/developer-experience layer for distributed .NET applications; it should not be treated as a replacement for application architecture.
+When a task involves .NET Aspire, use the official Aspire Agent Skill when it is installed and available in the environment. Do not duplicate Aspire-specific workflows, API details, resource configuration guidance, or current Aspire documentation in this skill.
 
-- Inspect the existing AppHost, service projects, resources, and Aspire version before changing orchestration.
-- Prefer Aspire's built-in integrations and established repository patterns over custom orchestration code.
-- Keep application logic in application/service projects rather than moving business behavior into the AppHost.
-- Treat resource references, endpoints, configuration, service discovery, health checks, and environment wiring as deployment/runtime concerns.
-- Avoid coupling application code unnecessarily to Aspire-specific APIs when a normal .NET abstraction is sufficient.
-- Use the installed/official Aspire skill for detailed Aspire-specific workflows and current APIs when available.
-- When Aspire behavior is version-sensitive, verify it against the repository and current official documentation rather than relying on remembered APIs.
+This skill still applies to general .NET engineering decisions around an Aspire codebase: correctness, architecture, dependencies, C#, APIs, persistence, testing, security, and performance. The official Aspire skill owns Aspire-specific workflows and APIs.
+
+If the official Aspire skill is unavailable, follow the repository's existing Aspire conventions and verify version-sensitive behavior against official Aspire documentation rather than relying on remembered APIs.
 
 ## Personal defaults
 
-These are defaults for new projects, not universal rules:
+These are defaults for genuinely new projects or new architecture where the repository does not already establish a pattern. They are not universal rules and must not override existing project conventions.
 
 - CQRS where separate command/query models provide value.
 - Martinothamar.Mediator for mediator-based application flow.
@@ -173,7 +176,7 @@ These are defaults for new projects, not universal rules:
 - `IEndpoint` for feature-oriented Minimal API endpoint organization when the application is large enough to benefit from the abstraction.
 - Fewer dependencies and explicit implementations for small, non-sensitive functionality.
 
-Existing projects may use MediatR, Mapster, another result library, a different mediator, direct route mapping, another endpoint abstraction, or a different architecture. Follow the project unless migration is part of the task.
+For an existing project, follow its established architecture and dependencies. Do not introduce these defaults merely because they are preferred here.
 
 ## Validation
 
@@ -190,7 +193,7 @@ Do not claim a change is verified when the relevant validation was not actually 
 
 ## Reference routing
 
-Read only the reference needed for the current task. Do not load unrelated references merely because they exist.
+Read only the reference needed for the current task.
 
 | Task involves | Reference |
 |---|---|
@@ -202,4 +205,4 @@ Read only the reference needed for the current task. Do not load unrelated refer
 | Authentication, authorization, untrusted input, secrets, injection, SSRF, browser security, threat modeling | `references/security.md` |
 | Reviewing a diff, pull request, implementation, or completed change | `references/review.md` |
 
-If a task crosses multiple areas, read the smallest combination of references that covers the affected decisions.
+If the task is primarily scaffolding a new solution, project, or complete feature, use the `dotnet-scaffold` skill for the scaffolding workflow and use this skill for general .NET engineering guidance.
