@@ -34,7 +34,7 @@ Readable code is normally preferable outside measured hot paths.
 
 ## Database performance
 
-For EF Core/database bottlenecks, consult `references/efcore.md`.
+For EF Core/database bottlenecks, follow the main skill's routing and read the EF Core reference alongside this one.
 
 Start with query shape, result size, indexes, round trips, tracking/materialization, and database execution plans before introducing application-side caching or complex optimizations.
 

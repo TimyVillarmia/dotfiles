@@ -1,6 +1,10 @@
 ---
 name: dotnet
-description: Senior-level guidance for building, modifying, debugging, architecting, and reviewing .NET/C# applications. Use when a task involves .NET or C# engineering, especially ASP.NET Core APIs, EF Core, architecture, dependencies, security, performance, testing, or code review.
+description: Use when building, modifying, debugging, architecting, or reviewing .NET/C# code (.cs, .csproj, .sln/.slnx, ASP.NET Core, EF Core, NuGet). For creating a new solution/project/feature slice use dotnet-scaffold; for package/API evidence use dotnet-inspect; for Aspire workflows use the Aspire skill.
+license: MIT
+metadata:
+  author: Timy
+  version: "1.0"
 ---
 
 # .NET Engineering
@@ -39,15 +43,16 @@ An existing dependency or architecture is not automatically wrong because it dif
 
 Before implementation, determine the smallest set of concerns involved:
 
-| Task | Action |
+| Task involves | Action |
 |---|---|
-| C# language, types, async, modernization | Read `references/csharp.md` |
-| ASP.NET Core, HTTP APIs, endpoints, OpenAPI | Read `references/api.md` |
-| Architecture, boundaries, CQRS, Vertical Slice | Read `references/architecture.md` |
-| EF Core, queries, modeling, transactions, migrations | Read `references/efcore.md` |
-| Performance investigation or optimization | Read `references/performance.md` |
-| Security, authentication, authorization, untrusted input | Read `references/security.md` |
-| Code/diff/PR review | Read `references/review.md` |
+| C# syntax, idioms, type-system design, async patterns, or modernization | Read `references/csharp.md` when the task depends on language behavior or version-sensitive syntax |
+| ASP.NET Core HTTP APIs, endpoints, contracts, OpenAPI | Read `references/api.md` when the task touches HTTP surface, status codes, validation, or API contracts |
+| Architecture, boundaries, CQRS, Vertical Slice | Read `references/architecture.md` when the task changes structure, dependency direction, or module boundaries |
+| EF Core, queries, modeling, transactions, migrations | Read `references/efcore.md` when the task touches DbContext, LINQ, persistence, or schema evolution |
+| A measured or suspected performance problem | Read `references/performance.md` when performance is a requirement; if the bottleneck is database/EF, also read `references/efcore.md` |
+| Authentication, authorization, untrusted input, secrets | Read `references/security.md` when the task handles identity, access control, or attacker-reachable input |
+| Reviewing a diff, PR, or completed change | Read `references/review.md` when reviewing rather than implementing |
+| Finding evidence for packages, APIs, or version diffs | Use the `dotnet-inspect` skill instead of guessing |
 | .NET Aspire-specific workflow or current Aspire APIs | Use the official Aspire Agent Skill when available |
 
 If a task crosses multiple areas, read only the smallest combination of references that covers the affected decisions. Do not load unrelated references merely because they exist.
@@ -74,6 +79,15 @@ Match investigation, implementation, and validation depth to scope, risk, and un
 - **Cross-cutting, security-sensitive, performance-sensitive, data-sensitive, or architectural change:** broaden investigation and validation proportionally.
 
 Do not perform heavyweight architectural analysis or broad refactoring for a trivial change without a concrete reason.
+
+## Gotchas
+
+- Target framework is not the language version: verify `LangVersion` and SDK defaults independently before using newer C# syntax.
+- EF Core in-memory providers are not relational substitutes: do not claim relational behavior (constraints, transactions, concurrency) is verified without a relational provider.
+- Startup migration is a deployment decision: with multiple instances, restricted DB permissions, or a pipeline that can run migrations separately, prefer an explicit migration mechanism over racing at startup.
+- `TypedResults` vs `IResult`/`Results`: follow the surrounding API's established return style; do not mix both without a reason.
+- `new HttpClient()` per request exhausts sockets: use `IHttpClientFactory` or the project's configured HTTP infrastructure.
+- Client-supplied tenant/role identifiers are not authorization proof: enforce scope server-side at the resource boundary.
 
 ## Modern C# and .NET
 
@@ -182,27 +196,15 @@ For an existing project, follow its established architecture and dependencies. D
 
 After changes, validate proportionally to risk:
 
-1. Format/analyze the affected project when appropriate.
-2. Build the smallest useful scope first, then the relevant solution when warranted.
-3. Run focused tests, followed by broader tests when practical and relevant.
+1. Format/analyze the affected project when appropriate (`dotnet format --verify-no-changes`).
+2. Build the smallest useful scope first (`dotnet build <project>`), then the relevant solution when warranted.
+3. Run focused tests (`dotnet test --filter "<name>"`), followed by broader tests when practical and relevant.
 4. Verify API contracts, database behavior, migrations, or security behavior when affected.
 5. Review the final diff for unintended changes, unnecessary complexity, and regressions.
 6. If performance is relevant, compare measurements before and after.
 
-Do not claim a change is verified when the relevant validation was not actually performed.
+Do not claim a change is verified when the relevant validation was not actually performed. Report checks that could not be run and why.
 
-## Reference routing
-
-Read only the reference needed for the current task.
-
-| Task involves | Reference |
-|---|---|
-| C# language features, syntax, idioms, type-system design, async patterns, modernization, language-version decisions | `references/csharp.md` |
-| ASP.NET Core HTTP APIs, endpoint contracts, OpenAPI, validation, errors, pagination | `references/api.md` |
-| Architecture, CQRS, Vertical Slice, Clean Architecture, boundaries, dependency direction | `references/architecture.md` |
-| EF Core, database queries, modeling, transactions, concurrency, migrations, persistence testing | `references/efcore.md` |
-| A measured/suspected performance problem or optimization work | `references/performance.md` |
-| Authentication, authorization, untrusted input, secrets, injection, SSRF, browser security, threat modeling | `references/security.md` |
-| Reviewing a diff, pull request, implementation, or completed change | `references/review.md` |
+Routing reminder: re-check `Classify the task` above and load only the reference needed; do not load unrelated references.
 
 If the task is primarily scaffolding a new solution, project, or complete feature, use the `dotnet-scaffold` skill for the scaffolding workflow and use this skill for general .NET engineering guidance.
