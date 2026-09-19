@@ -1,6 +1,6 @@
 ---
 name: dotnet-scaffold
-description: Scaffold a new .NET solution, project, or complete feature/entity slice following repository conventions. Use when creating something new from scratch; for engineering guidance on existing code use the dotnet skill, and for Aspire-specific workflows use the Aspire skill.
+description: Scaffold a new .NET solution, project, or complete feature/entity/vertical slice (command, handler, endpoint, validation, tests) following repository conventions. Use when creating something new from scratch — new project, new entity, or CQRS/Vertical Slice feature. For engineering guidance on existing code use the dotnet skill, and for Aspire-specific workflows use the Aspire skill.
 license: MIT
 metadata:
   author: Timy

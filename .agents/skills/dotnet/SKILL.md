@@ -1,6 +1,6 @@
 ---
 name: dotnet
-description: Use when building, modifying, debugging, architecting, or reviewing .NET/C# code (.cs, .csproj, .sln/.slnx, ASP.NET Core, EF Core, NuGet). For creating a new solution/project/feature slice use dotnet-scaffold; for package/API evidence use dotnet-inspect; for Aspire workflows use the Aspire skill.
+description: Use when building, modifying, debugging, architecting, or reviewing .NET/C# — C# language and async, ASP.NET Core Minimal APIs/endpoints/OpenAPI, EF Core/DbContext queries and migrations, architecture/CQRS/Vertical Slice, performance, auth/authz and security, code review, or NuGet/project files (.cs, .csproj, .sln/.slnx). Use even when the request describes the symptom without naming .NET (slow Includes, N+1, endpoint auth/status codes, ValueTask, tenant boundaries, idempotency). For creating a new solution/project/feature slice use dotnet-scaffold; for package/API evidence use dotnet-inspect; for Aspire workflows use the Aspire skill.
 license: MIT
 metadata:
   author: Timy
