@@ -1,4 +1,4 @@
-marlonrichert/zsh-autocomplete@7633bc7cd381b66168813a1c1b2a4ab3687accfc
+marlonrichert/zsh-autocomplete pin:7633bc7cd381b66168813a1c1b2a4ab3687accfc
 zsh-users/zsh-completions
 zsh-users/zsh-autosuggestions
 zsh-users/zsh-syntax-highlighting
