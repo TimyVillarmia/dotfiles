@@ -28,19 +28,21 @@ setopt HIST_REDUCE_BLANKS
 setopt HIST_FIND_NO_DUPS
 setopt HIST_VERIFY
 
+# Tool Initialization
+
+if command -v mise >/dev/null 2>&1; then
+    eval "$(mise activate zsh)"
+fi
+
+# Plugins
+
+if [[ -f "$HOME/.zsh_plugins.zsh" ]]; then
+    source "$HOME/.zsh_plugins.zsh"
+fi
+
 # Completion
 
 mkdir -p "$HOME/.cache/zsh"
-
-autoload -Uz compinit
-
-ZCOMPDUMP="$HOME/.cache/zsh/.zcompdump"
-
-if [[ ! -f "$ZCOMPDUMP" || "$ZCOMPDUMP" -nt "$HOME/.zshrc" ]]; then
-    compinit -d "$ZCOMPDUMP"
-else
-    compinit -C -d "$ZCOMPDUMP"
-fi
 
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list \
@@ -51,26 +53,22 @@ zstyle ':completion:*' matcher-list \
 zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path "$HOME/.cache/zsh"
 
-# Tool Initialization
+# fzf
 
-if command -v mise >/dev/null 2>&1; then
-    eval "$(mise activate zsh)"
+if command -v fzf >/dev/null 2>&1; then
+    source <(fzf --zsh)
 fi
 
-if [[ -f "$HOME/.zsh_plugins.zsh" ]]; then
-    source "$HOME/.zsh_plugins.zsh"
-fi
-
-if [[ -f "$HOME/.cache/omp-init.zsh" ]]; then
-    source "$HOME/.cache/omp-init.zsh"
-fi
+# zoxide
 
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init zsh)"
 fi
 
-if command -v fzf >/dev/null 2>&1; then
-    source <(fzf --zsh)
+# Prompt
+
+if [[ -f "$HOME/.cache/omp-init.zsh" ]]; then
+    source "$HOME/.cache/omp-init.zsh"
 fi
 
 # Aliases
