@@ -40,7 +40,6 @@ if ! command -v mise >/dev/null 2>&1; then
     rm -f /tmp/install-mise.sh
 fi
 
-# Install tools declared in ~/.config/mise/config.toml
 mise install
 
 # Antidote
@@ -62,12 +61,10 @@ ZPLUGINS="$HOME/.zsh_plugins.txt"
 ZBUNDLE="$HOME/.zsh_plugins.zsh"
 
 if [[ -f "$ANTIDOTE_DIR/antidote.zsh" && -f "$ZPLUGINS" ]]; then
-    if [[ ! -f "$ZBUNDLE" || "$ZPLUGINS" -nt "$ZBUNDLE" ]]; then
-        zsh -c "
-            source '$ANTIDOTE_DIR/antidote.zsh'
-            antidote bundle < '$ZPLUGINS' > '$ZBUNDLE'
-        "
-    fi
+    zsh -c "
+        source '$ANTIDOTE_DIR/antidote.zsh'
+        antidote bundle < '$ZPLUGINS' > '$ZBUNDLE'
+    "
 fi
 
 # Generate Oh My Posh Cache
