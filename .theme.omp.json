@@ -28,7 +28,7 @@
         {
           "foreground": "#14A5AE",
           "options": {
-            "branch_icon": "\\ue725 "
+            "branch_icon": "\ue725 "
           },
           "style": "plain",
           "template": "{{ .HEAD }} {{ if .Working.Changed }}{{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#ef5350> \\uf046 {{ .Staging.String }}</>{{ end }} ",
