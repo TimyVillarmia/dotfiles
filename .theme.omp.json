@@ -6,7 +6,7 @@
       "segments": [
         {
           "style": "plain",
-          "template": "{{ .Icon }}",
+          "template": "{{ .Icon }} ",
           "type": "os"
         },
         {
@@ -39,7 +39,7 @@
             "branch_icon": "\ue725 "
           },
           "style": "powerline",
-          "template": " {{ .HEAD }} {{ if .Working.Changed }}{{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#ef5350> \uf046 {{ .Staging.String }}</> ",
+          "template": " {{ .HEAD }} {{ if .Working.Changed }}{{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }}<#ef5350> \uf046 {{ .Staging.String }}</>{{ end }} ",
           "type": "git"
         }
       ],
