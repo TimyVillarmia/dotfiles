@@ -13,14 +13,18 @@ path=(
 export PATH
 export EDITOR="code --wait"
 
+# Zsh recent directories
+
+ZSH_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh"
+mkdir -p "$ZSH_DATA_DIR"
+touch "$ZSH_DATA_DIR/chpwd-recent-dirs"
+
 # History
 
 HISTFILE="$HOME/.zsh_history"
 HISTSIZE=50000
 SAVEHIST=50000
 
-setopt APPEND_HISTORY
-setopt INC_APPEND_HISTORY
 setopt SHARE_HISTORY
 setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_SPACE
@@ -74,7 +78,7 @@ fi
 # Aliases
 
 alias c="clear"
-alias reload="source ~/.zshrc"
+alias reload="exec zsh"
 
 alias v="code"
 alias open="explorer.exe"
