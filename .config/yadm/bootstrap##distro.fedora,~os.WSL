@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# System Packages
+
+sudo dnf install -y \
+    btop \
+    ca-certificates \
+    curl \
+    fontconfig \
+    git \
+    unzip \
+    wget \
+    zsh
+
+# Oh My Posh
+
+if ! command -v oh-my-posh >/dev/null 2>&1; then
+    curl -fsSL https://ohmyposh.dev/install.sh \
+        -o /tmp/install-omp.sh
+
+    sudo bash /tmp/install-omp.sh -d /usr/local/bin
+
+    rm -f /tmp/install-omp.sh
+fi
+
+# mise
+
+export PATH="$HOME/.local/bin:$PATH"
+
+if ! command -v mise >/dev/null 2>&1; then
+    curl -fsSL https://mise.run \
+        -o /tmp/install-mise.sh
+
+    sh /tmp/install-mise.sh
+
+    rm -f /tmp/install-mise.sh
+fi
+
+mise install
+
+# Antidote
+
+ANTIDOTE_DIR="${ZDOTDIR:-$HOME}/.antidote"
+
+if [[ -d "$ANTIDOTE_DIR/.git" ]]; then
+    git -C "$ANTIDOTE_DIR" pull --ff-only
+else
+    git clone \
+        --depth=1 \
+        https://github.com/mattmc3/antidote.git \
+        "$ANTIDOTE_DIR"
+fi
+
+# Generate Plugin Bundle
+
+ZPLUGINS="$HOME/.zsh_plugins.txt"
+ZBUNDLE="$HOME/.zsh_plugins.zsh"
+
+if [[ -f "$ANTIDOTE_DIR/antidote.zsh" && -f "$ZPLUGINS" ]]; then
+    zsh -c "
+        source '$ANTIDOTE_DIR/antidote.zsh'
+        antidote bundle < '$ZPLUGINS' > '$ZBUNDLE'
+    "
+fi
+
+# Generate Oh My Posh Cache
+
+THEME="$HOME/.theme.omp.json"
+OMP_CACHE="$HOME/.cache/omp-init.zsh"
+
+mkdir -p "$HOME/.cache"
+
+if command -v oh-my-posh >/dev/null 2>&1 && [[ -f "$THEME" ]]; then
+    if [[ ! -f "$OMP_CACHE" || "$THEME" -nt "$OMP_CACHE" ]]; then
+        oh-my-posh init zsh \
+            --config "$THEME" \
+            > "$OMP_CACHE"
+    fi
+fi
+
+# Nerd Font for the prompt
+
+FONT_DIR="$HOME/.local/share/fonts"
+FONT="$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf"
+
+mkdir -p "$FONT_DIR"
+
+if [[ ! -f "$FONT" ]]; then
+    curl -fLo "$FONT" \
+        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Regular/JetBrainsMonoNerdFont-Regular.ttf
+    fc-cache -f
+fi
+
+# Default Shell
+
+if command -v zsh >/dev/null 2>&1; then
+    TARGET_SHELL="$(command -v zsh)"
+
+    if [[ "$SHELL" != "$TARGET_SHELL" ]]; then
+        chsh -s "$TARGET_SHELL"
+    fi
+fi
