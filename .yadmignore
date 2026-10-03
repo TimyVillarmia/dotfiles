@@ -8,6 +8,7 @@
 .local/share/
 .zcompdump*
 .zcompdump
+.zsh_plugins.zsh
 
 # -------------------------
 # tools / runtimes

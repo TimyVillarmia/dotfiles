@@ -4,19 +4,15 @@ set -euo pipefail
 
 # System Packages
 
-sudo apt update
-
-sudo apt install -y \
-    build-essential \
+sudo dnf install -y \
     btop \
     ca-certificates \
     curl \
+    fontconfig \
     git \
     unzip \
     wget \
     zsh
-
-export PATH="$HOME/.local/bin:$PATH"
 
 # Oh My Posh
 
@@ -30,6 +26,8 @@ if ! command -v oh-my-posh >/dev/null 2>&1; then
 fi
 
 # mise
+
+export PATH="$HOME/.local/bin:$PATH"
 
 if ! command -v mise >/dev/null 2>&1; then
     curl -fsSL https://mise.run \
@@ -82,12 +80,25 @@ if command -v oh-my-posh >/dev/null 2>&1 && [[ -f "$THEME" ]]; then
     fi
 fi
 
+# Nerd Font for the prompt
+
+FONT_DIR="$HOME/.local/share/fonts"
+FONT="$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf"
+
+mkdir -p "$FONT_DIR"
+
+if [[ ! -f "$FONT" ]]; then
+    curl -fLo "$FONT" \
+        https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/JetBrainsMono/Regular/JetBrainsMonoNerdFont-Regular.ttf
+    fc-cache -f
+fi
+
 # Default Shell
 
 if command -v zsh >/dev/null 2>&1; then
     TARGET_SHELL="$(command -v zsh)"
 
     if [[ "$SHELL" != "$TARGET_SHELL" ]]; then
-        sudo chsh -s "$TARGET_SHELL" "$USER"
+        chsh -s "$TARGET_SHELL"
     fi
 fi
