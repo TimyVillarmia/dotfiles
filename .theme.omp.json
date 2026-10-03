@@ -1,92 +1,48 @@
 {
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
-  "palette": {
-    "os": "#ACB0BE",
-    "closer": "#ACB0BE",
-    "pink": "#F4B8E4",
-    "lavender": "#BABBF1",
-    "blue": "#8CAAEE",
-    "green": "#A6D189",
-    "red": "#E78284"
-  },
   "blocks": [
     {
       "alignment": "left",
-      "type": "prompt",
       "segments": [
         {
-          "foreground": "p:os",
+          "foreground": "lightYellow",
           "style": "plain",
-          "template": "{{.Icon}} ",
-          "type": "os"
-        },
-        {
-          "foreground": "p:blue",
-          "style": "plain",
-          "template": "{{ .UserName }}@{{ .HostName }} ",
+          "template": "{{ .UserName }} ",
           "type": "session"
         },
         {
-          "foreground": "p:pink",
-          "properties": {
-            "style": "folder",
-            "home_icon": "~"
+          "foreground": "cyan",
+          "options": {
+            "style": "folder"
           },
           "style": "plain",
-          "template": "\ue5fe {{ .Path }} ",
+          "template": "<#ffffff>in</> {{ .Path }} ",
           "type": "path"
         },
         {
-          "foreground": "p:lavender",
-          "properties": {
-            "branch_icon": "\ue725 ",
-            "fetch_status": true
+          "foreground": "#ff94df",
+          "options": {
+            "branch_icon": " <#ff94df><b>\ue0a0 </b></>"
           },
           "style": "plain",
-          "template": "{{ .HEAD }}{{if .Staging.Changed}} \uf046 {{.Staging.String}}{{end}}{{if .Working.Changed}} \uf044 {{.Working.String}}{{end}} ",
+          "template": "<#ffffff>on</> {{ .HEAD }}{{ if gt .StashCount 0 }} \ueb4b {{ .StashCount }}{{ end }} ",
           "type": "git"
         }
-      ]
-    },
-    {
-      "alignment": "right",
-      "type": "prompt",
-      "segments": [
-        {
-          "type": "executiontime",
-          "style": "plain",
-          "foreground": "p:lavender",
-          "template": "\uf252 {{ .FormattedMs }}",
-          "properties": {
-            "threshold": 500
-          }
-        },
-        {
-          "type": "status",
-          "style": "plain",
-          "foreground": "p:green",
-          "foreground_templates": [
-            "{{ if gt .Code 0 }}p:red{{ end }}"
-          ],
-          "template": " {{ if gt .Code 0 }}\uf00d {{ .Code }}{{ else }}\uf00c{{ end }}",
-          "properties": {
-            "always_enabled": true
-          }
-        }
-      ]
+      ],
+      "type": "prompt"
     },
     {
       "alignment": "left",
       "newline": true,
-      "type": "prompt",
       "segments": [
         {
-          "foreground": "p:pink",
+          "foreground": "lightGreen",
           "style": "plain",
-          "template": "\u276f ",
+          "template": "\u276f",
           "type": "text"
         }
-      ]
+      ],
+      "type": "prompt"
     }
   ],
   "final_space": true,
